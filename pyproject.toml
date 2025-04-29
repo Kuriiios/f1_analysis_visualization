@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "f1_analysis_ccds"
+version = "0.0.1"
+description = "This is my analysis of the 2025 F1 season"
+authors = [
+  { name = "Cyril Leconte" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
+requires-python = "~=3.10.0"
+
+
+[tool.ruff]
+line-length = 99
+src = ["f1_analysis_ccds"]
+include = ["pyproject.toml", "f1_analysis_ccds/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["f1_analysis_ccds"]
+force-sort-within-sections = true
+
