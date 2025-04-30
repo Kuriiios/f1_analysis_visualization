@@ -37,7 +37,7 @@ q2 = q2[~is_nat]
 is_nat = np.isnat(q3['LapTime'])
 q3 = q3[~is_nat]
 
-filename = f'../reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying/'
+filename = f'../reports/reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying/'
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 os.chdir(filename)
 

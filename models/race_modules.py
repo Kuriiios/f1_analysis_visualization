@@ -24,7 +24,7 @@ race_session = input('Session ? (R, S)')
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
 
-filename = f'../reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Race/'
+filename = f'../reports/reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Race/'
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 os.chdir(filename)
 
