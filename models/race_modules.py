@@ -33,19 +33,19 @@ circuit_info = session.get_circuit_info()
 teams = fastf1.plotting.list_team_names(session)
 
 def show_laptime_comp(team_drivers, session):
-    driver0_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
-    driver1_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
-    if len(driver0_laps) > 1 :
-        driver0_laps.loc[0, 'LapTime'] = driver0_laps.loc[1, 'LapStartTime'] - driver0_laps.loc[0, 'LapStartTime']
-    if len(driver1_laps)>1:
-        driver1_laps.loc[0, 'LapTime'] = driver1_laps.loc[1, 'LapStartTime'] - driver1_laps.loc[0, 'LapStartTime']
+    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
+    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
+    if len(driver_1_laps) > 1 :
+        driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
+    if len(driver_2_laps)>1:
+        driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
 
     last_lap = int(max(session.laps['LapNumber']))
 
     fig, ax = plt.subplots(figsize=(11, 5))
     
-    ax.plot(driver0_laps['LapNumber'], driver0_laps['LapTime'], color=team_color)
-    ax.plot(driver1_laps['LapNumber'], driver1_laps['LapTime'], color=team_color_2)
+    ax.plot(driver_1_laps['LapNumber'], driver_1_laps['LapTime'], color=team_color)
+    ax.plot(driver_2_laps['LapNumber'], driver_2_laps['LapTime'], color=team_color_2)
     ax.tick_params(labelright=True)
     ax.set_xlim([0, last_lap])
     
@@ -60,20 +60,20 @@ def show_laptime_comp(team_drivers, session):
     plt.savefig(fname=f'{session.name}_{team}_laptime_comp', transparent=True)
     
 def show_laptime_scatterplot(team_drivers, session):
-    driver0_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
-    driver1_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
-    driver0_laps.loc[0, 'LapTime'] = driver0_laps.loc[1, 'LapStartTime'] - driver0_laps.loc[0, 'LapStartTime']
-    driver1_laps.loc[0, 'LapTime'] = driver1_laps.loc[1, 'LapStartTime'] - driver1_laps.loc[0, 'LapStartTime']
+    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
+    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
+    driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
+    driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
     
-    if driver0_laps.empty:
-        min_laptime = min(driver1_laps['LapTime'])
-        max_laptime = max(driver1_laps['LapTime'])
-    elif driver1_laps.empty:
-        min_laptime = min(driver0_laps['LapTime'])
-        max_laptime = max(driver0_laps['LapTime'])
+    if driver_1_laps.empty:
+        min_laptime = min(driver_2_laps['LapTime'])
+        max_laptime = max(driver_2_laps['LapTime'])
+    elif driver_2_laps.empty:
+        min_laptime = min(driver_1_laps['LapTime'])
+        max_laptime = max(driver_1_laps['LapTime'])
     else:
-        min_laptime = min(min(driver0_laps['LapTime']), min(driver1_laps['LapTime']))
-        max_laptime = max(max(driver0_laps['LapTime']), max(driver1_laps['LapTime']))
+        min_laptime = min(min(driver_1_laps['LapTime']), min(driver_2_laps['LapTime']))
+        max_laptime = max(max(driver_1_laps['LapTime']), max(driver_2_laps['LapTime']))
     
     min_laptime = min_laptime - \
                         timedelta(seconds= 1)
@@ -84,7 +84,7 @@ def show_laptime_scatterplot(team_drivers, session):
     
     fig, ax = plt.subplots(figsize=(5.75, 4.2))
     
-    sns.scatterplot(data=driver0_laps,
+    sns.scatterplot(data=driver_1_laps,
                     x="LapNumber",
                     y="LapTime",
                     hue = 'Compound',
@@ -94,7 +94,7 @@ def show_laptime_scatterplot(team_drivers, session):
                     s=50,
                     linewidth=0.5)
     
-    sns.scatterplot(data=driver1_laps,
+    sns.scatterplot(data=driver_2_laps,
                     x="LapNumber",
                     y="LapTime",
                     hue = 'Compound',
@@ -120,26 +120,26 @@ def show_laptime_scatterplot(team_drivers, session):
 
     
 def show_pace_comp(team_drivers, session):
-    driver0_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
-    driver1_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
+    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
+    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
 
-    driver0_laps.loc[0, 'LapTime'] = driver0_laps.loc[1, 'LapStartTime'] - driver0_laps.loc[0, 'LapStartTime']
-    driver1_laps.loc[0, 'LapTime'] = driver1_laps.loc[1, 'LapStartTime'] - driver1_laps.loc[0, 'LapStartTime']
+    driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
+    driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
     
-    transformed_driver0_laps = driver0_laps.copy()
-    transformed_driver0_laps.loc[:, "LapTime (s)"] = driver0_laps["LapTime"].dt.total_seconds()
-    transformed_driver1_laps = driver1_laps.copy()
-    transformed_driver1_laps.loc[:, "LapTime (s)"] = driver1_laps["LapTime"].dt.total_seconds()
+    transformed_driver_1_laps = driver_1_laps.copy()
+    transformed_driver_1_laps.loc[:, "LapTime (s)"] = driver_1_laps["LapTime"].dt.total_seconds()
+    transformed_driver_2_laps = driver_2_laps.copy()
+    transformed_driver_2_laps.loc[:, "LapTime (s)"] = driver_2_laps["LapTime"].dt.total_seconds()
     
-    if transformed_driver0_laps.empty:
-        min_laptime = min(transformed_driver1_laps['LapTime'])
-        max_laptime = max(transformed_driver1_laps['LapTime'])
-    elif transformed_driver1_laps.empty:
-        min_laptime = min(transformed_driver0_laps['LapTime'])
-        max_laptime = max(transformed_driver0_laps['LapTime'])
+    if transformed_driver_1_laps.empty:
+        min_laptime = min(transformed_driver_2_laps['LapTime'])
+        max_laptime = max(transformed_driver_2_laps['LapTime'])
+    elif transformed_driver_2_laps.empty:
+        min_laptime = min(transformed_driver_1_laps['LapTime'])
+        max_laptime = max(transformed_driver_1_laps['LapTime'])
     else:
-        min_laptime = min(min(transformed_driver0_laps['LapTime']), min(transformed_driver1_laps['LapTime']))
-        max_laptime = max(max(transformed_driver0_laps['LapTime']), max(transformed_driver1_laps['LapTime']))
+        min_laptime = min(min(transformed_driver_1_laps['LapTime']), min(transformed_driver_2_laps['LapTime']))
+        max_laptime = max(max(transformed_driver_1_laps['LapTime']), max(transformed_driver_2_laps['LapTime']))
     min_laptime = min_laptime - \
                         timedelta(seconds= 1)
     max_laptime = max_laptime + \
@@ -153,7 +153,7 @@ def show_pace_comp(team_drivers, session):
     plt.rcParams.update({'font.size': 12})
 
     sns.boxplot(
-        data=transformed_driver0_laps,
+        data=transformed_driver_1_laps,
         y="LapTime",
         color = team_color,
         linecolor = 'white',
@@ -174,11 +174,11 @@ def show_pace_comp(team_drivers, session):
     plt.tick_params(bottom = False)
     plt.grid(color='w', which='major', axis='y', linestyle = 'dotted')
     plt.tight_layout()
-    plt.savefig(fname=f'{session.name}_{team}_driver0_pace', transparent=True)
+    plt.savefig(fname=f'{session.name}_{team}_driver_1_pace', transparent=True)
 
     fig, ax = plt.subplots(figsize=(2.5, 4.2))
     sns.boxplot(
-        data=transformed_driver1_laps,
+        data=transformed_driver_2_laps,
         y="LapTime",
         color = team_color_2,
         linecolor = 'white',
@@ -200,18 +200,18 @@ def show_pace_comp(team_drivers, session):
  
     plt.grid(color='w', which='major', axis='y', linestyle = 'dotted')
     plt.tight_layout()
-    plt.savefig(fname=f'{session.name}_{team}_driver1_pace', transparent=True)
+    plt.savefig(fname=f'{session.name}_{team}_driver_2_pace', transparent=True)
 
     
 def show_tyre_strategy(team_drivers, session):
     fig, ax = plt.subplots(figsize=(9.2, 1.2))
     
-    driver0_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+2))).reset_index()
-    driver1_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+2))).reset_index()
-    if len(driver0_laps) > 1 :
-        driver0_laps.loc[0, 'LapTime'] = driver0_laps.loc[1, 'LapStartTime'] - driver0_laps.loc[0, 'LapStartTime']
-    if len(driver1_laps)>1:
-        driver1_laps.loc[0, 'LapTime'] = driver1_laps.loc[1, 'LapStartTime'] - driver1_laps.loc[0, 'LapStartTime']
+    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+2))).reset_index()
+    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+2))).reset_index()
+    if len(driver_1_laps) > 1 :
+        driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
+    if len(driver_2_laps)>1:
+        driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
     last_lap = int(max(session.laps['LapNumber']))
     
     for driver in team_drivers:
