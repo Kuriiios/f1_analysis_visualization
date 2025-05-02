@@ -25,12 +25,12 @@ pit = ergast.get_pit_stops(season = year, round = race_number )
 teams = fastf1.plotting.list_team_names(session)
 
 def get_pitstop_time(session, team_drivers):
-    driver0_name = fastf1.plotting.get_driver_name(team_drivers[0], session).split()[1].lower()
-    driver1_name = fastf1.plotting.get_driver_name(team_drivers[1], session).split()[1].lower()
-    if driver0_name == 'verstappen':
-        driver0_name = 'max_verstappen'
-    pit0 = ergast.get_pit_stops(season = year, round = race_number, driver=driver0_name).content
-    pit1 = ergast.get_pit_stops(season = year, round = race_number, driver=driver1_name).content
+    driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session).split()[1].lower()
+    driver_2_name = fastf1.plotting.get_driver_name(team_drivers[1], session).split()[1].lower()
+    if driver_1_name == 'verstappen':
+        driver_1_name = 'max_verstappen'
+    pit0 = ergast.get_pit_stops(season = year, round = race_number, driver=driver_1_name).content
+    pit1 = ergast.get_pit_stops(season = year, round = race_number, driver=driver_2_name).content
     
     try:
         pit0_number = str(pit0[0]['stop'].iloc[-1])
@@ -48,106 +48,106 @@ def get_pitstop_time(session, team_drivers):
     return pit0_number, pit0_total_duration, pit1_number, pit1_total_duration
 
 def get_faster_driver_per_lap(session, team_drivers):
-    driver0_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, session.total_laps+1)).reset_index()
-    driver1_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, session.total_laps+1)).reset_index()
-    driver0_laps.loc[0, 'LapTime'] = driver0_laps.loc[1, 'LapStartTime'] - driver0_laps.loc[0, 'LapStartTime']
-    driver1_laps.loc[0, 'LapTime'] = driver1_laps.loc[1, 'LapStartTime'] - driver1_laps.loc[0, 'LapStartTime']
+    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, session.total_laps+1)).reset_index()
+    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, session.total_laps+1)).reset_index()
+    driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
+    driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
     fastest_driver_per_lap = []
-    if len(driver0_laps) == len(driver1_laps):
-        for lap in range(len(driver0_laps)):
-            if '4' in str(driver0_laps['TrackStatus'][lap]):
+    if len(driver_1_laps) == len(driver_2_laps):
+        for lap in range(len(driver_1_laps)):
+            if '4' in str(driver_1_laps['TrackStatus'][lap]):
                 fastest_driver_per_lap.append(2)
-            elif driver0_laps['LapTime'][lap] < driver1_laps['LapTime'][lap]:
+            elif driver_1_laps['LapTime'][lap] < driver_2_laps['LapTime'][lap]:
                 fastest_driver_per_lap.append(0)
-            elif driver0_laps['LapTime'][lap] > driver1_laps['LapTime'][lap]:
+            elif driver_1_laps['LapTime'][lap] > driver_2_laps['LapTime'][lap]:
                 fastest_driver_per_lap.append(1)
-    elif len(driver0_laps) > len(driver1_laps):
-        for lap in range(len(driver1_laps)):
-            if '4' in str(driver0_laps['TrackStatus'][lap]):
+    elif len(driver_1_laps) > len(driver_2_laps):
+        for lap in range(len(driver_2_laps)):
+            if '4' in str(driver_1_laps['TrackStatus'][lap]):
                 fastest_driver_per_lap.append(2)
-            elif driver0_laps['LapTime'][lap] < driver1_laps['LapTime'][lap]:
+            elif driver_1_laps['LapTime'][lap] < driver_2_laps['LapTime'][lap]:
                 fastest_driver_per_lap.append(0)
-            elif driver0_laps['LapTime'][lap] > driver1_laps['LapTime'][lap]:
+            elif driver_1_laps['LapTime'][lap] > driver_2_laps['LapTime'][lap]:
                 fastest_driver_per_lap.append(1)
-        for lap in range(len(driver1_laps), len(driver0_laps)):
-            if '4' in str(driver0_laps['TrackStatus'][lap]):
+        for lap in range(len(driver_2_laps), len(driver_1_laps)):
+            if '4' in str(driver_1_laps['TrackStatus'][lap]):
                 fastest_driver_per_lap.append(2)
             else:
                 fastest_driver_per_lap.append(0)
-    elif len(driver0_laps) < len(driver1_laps):
-        for lap in range(len(driver0_laps)):
-            if '4' in str(driver0_laps['TrackStatus'][lap]):
+    elif len(driver_1_laps) < len(driver_2_laps):
+        for lap in range(len(driver_1_laps)):
+            if '4' in str(driver_1_laps['TrackStatus'][lap]):
                 fastest_driver_per_lap.append(2)
-            elif driver0_laps['LapTime'][lap] < driver1_laps['LapTime'][lap]:
+            elif driver_1_laps['LapTime'][lap] < driver_2_laps['LapTime'][lap]:
                 fastest_driver_per_lap.append(0)
-            elif driver0_laps['LapTime'][lap] > driver1_laps['LapTime'][lap]:
+            elif driver_1_laps['LapTime'][lap] > driver_2_laps['LapTime'][lap]:
                 fastest_driver_per_lap.append(1)
-        for lap in range(len(driver0_laps), len(driver1_laps)):
-            if '4' in str(driver1_laps['TrackStatus'][lap]):
+        for lap in range(len(driver_1_laps), len(driver_2_laps)):
+            if '4' in str(driver_2_laps['TrackStatus'][lap]):
                 fastest_driver_per_lap.append(2)
             else:
                 fastest_driver_per_lap.append(1)
-    driver0_faster = str(fastest_driver_per_lap.count(0))+ '/' + str(len(fastest_driver_per_lap))
-    driver1_faster = str(fastest_driver_per_lap.count(1))+ '/' + str(len(fastest_driver_per_lap))
+    driver_1_faster = str(fastest_driver_per_lap.count(0))+ '/' + str(len(fastest_driver_per_lap))
+    driver_2_faster = str(fastest_driver_per_lap.count(1))+ '/' + str(len(fastest_driver_per_lap))
     safety_car_lap = str(fastest_driver_per_lap.count(2))+ '/' + str(len(fastest_driver_per_lap))
 
     team_info = [
-        driver0_faster,
-        driver1_faster,
+        driver_1_faster,
+        driver_2_faster,
         safety_car_lap,
         fastest_driver_per_lap
     ]
     return team_info
 
 def get_final_gap(session, team_drivers):
-    driver0_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, session.total_laps+1)).reset_index()
-    driver1_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, session.total_laps+1)).reset_index()
-    driver0_laps.loc[0, 'LapTime'] = driver0_laps.loc[1, 'LapStartTime'] - driver0_laps.loc[0, 'LapStartTime']
-    driver1_laps.loc[0, 'LapTime'] = driver1_laps.loc[1, 'LapStartTime'] - driver1_laps.loc[0, 'LapStartTime']
+    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, session.total_laps+1)).reset_index()
+    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, session.total_laps+1)).reset_index()
+    driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
+    driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
     zero_time = timedelta(0)
 
-    if len(driver0_laps) == len(driver1_laps):
-        if driver0_laps['Time'].iloc[-1] > driver1_laps['Time'].iloc[-1]:
-            gap = str(driver0_laps['Time'].iloc[-1] - driver1_laps['Time'].iloc[-1])[7:]
-            driver0_gap = '+' + str(gap)[3:-3]
-            driver1_gap = '-' + str(gap)[3:-3]
-        elif driver0_laps['Time'].iloc[-1] < driver1_laps['Time'].iloc[-1]:
-            gap = str(zero_time - (driver0_laps['Time'].iloc[-1] - driver1_laps['Time'].iloc[-1]))[7:]
-            driver0_gap = '-' + str(gap)[3:-3]
-            driver1_gap = '+' + str(gap)[3:-3]
-    elif len(driver0_laps) > len(driver1_laps):
-        gap = len(driver0_laps) - len(driver1_laps)
-        driver0_gap = '-' + str(gap) + ' laps'
-        driver1_gap = '+' + str(gap) + ' laps'
-    elif len(driver0_laps) < len(driver1_laps):
-        gap = len(driver1_laps) - len(driver0_laps)
-        driver0_gap = '+' + str(gap) + ' laps'
-        driver1_gap = '-' + str(gap) + ' laps'
-    if driver0_gap[1:4] == '00:':
-        driver0_gap = driver0_gap[0] + driver0_gap[4:]
-    if driver1_gap[1:4] == '00:':
-        driver1_gap = driver1_gap[0] + driver1_gap[4:]
+    if len(driver_1_laps) == len(driver_2_laps):
+        if driver_1_laps['Time'].iloc[-1] > driver_2_laps['Time'].iloc[-1]:
+            gap = str(driver_1_laps['Time'].iloc[-1] - driver_2_laps['Time'].iloc[-1])[7:]
+            driver_1_gap = '+' + str(gap)[3:-3]
+            driver_2_gap = '-' + str(gap)[3:-3]
+        elif driver_1_laps['Time'].iloc[-1] < driver_2_laps['Time'].iloc[-1]:
+            gap = str(zero_time - (driver_1_laps['Time'].iloc[-1] - driver_2_laps['Time'].iloc[-1]))[7:]
+            driver_1_gap = '-' + str(gap)[3:-3]
+            driver_2_gap = '+' + str(gap)[3:-3]
+    elif len(driver_1_laps) > len(driver_2_laps):
+        gap = len(driver_1_laps) - len(driver_2_laps)
+        driver_1_gap = '-' + str(gap) + ' laps'
+        driver_2_gap = '+' + str(gap) + ' laps'
+    elif len(driver_1_laps) < len(driver_2_laps):
+        gap = len(driver_2_laps) - len(driver_1_laps)
+        driver_1_gap = '+' + str(gap) + ' laps'
+        driver_2_gap = '-' + str(gap) + ' laps'
+    if driver_1_gap[1:4] == '00:':
+        driver_1_gap = driver_1_gap[0] + driver_1_gap[4:]
+    if driver_2_gap[1:4] == '00:':
+        driver_2_gap = driver_2_gap[0] + driver_2_gap[4:]
         
-    return driver0_gap, driver1_gap
+    return driver_1_gap, driver_2_gap
 
 def get_drivers_info(session,team_drivers):
-    driver0_laps = session.laps.pick_drivers(team_drivers[0]).pick_quicklaps(1.4).reset_index()
-    driver1_laps = session.laps.pick_drivers(team_drivers[1]).pick_quicklaps(1.4).reset_index()
-    driver0_laps.loc[0, 'LapTime'] = driver0_laps.loc[1, 'LapStartTime'] - driver0_laps.loc[0, 'LapStartTime']
-    driver1_laps.loc[0, 'LapTime'] = driver1_laps.loc[1, 'LapStartTime'] - driver1_laps.loc[0, 'LapStartTime']
+    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_quicklaps(1.4).reset_index()
+    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_quicklaps(1.4).reset_index()
+    driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
+    driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
 
-    driver0_name = fastf1.plotting.get_driver_name(team_drivers[0], session)
-    driver1_name = fastf1.plotting.get_driver_name(team_drivers[1], session)
-    if driver0_name == 'Andrea Kimi Antonelli':
-        driver0_name = 'Kimi Antonelli'
-    if driver1_name == 'Andrea Kimi Antonelli':
-        driver1_name = 'Kimi Antonelli'
-    if driver0_name == 'Oliver Bearman':
-        driver0_name = 'Ollie Bearman'
-    if driver1_name == 'Oliver Bearman':
-        driver1_name = 'Ollie Bearman'
+    driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session)
+    driver_2_name = fastf1.plotting.get_driver_name(team_drivers[1], session)
+    if driver_1_name == 'Andrea Kimi Antonelli':
+        driver_1_name = 'Kimi Antonelli'
+    if driver_2_name == 'Andrea Kimi Antonelli':
+        driver_2_name = 'Kimi Antonelli'
+    if driver_1_name == 'Oliver Bearman':
+        driver_1_name = 'Ollie Bearman'
+    if driver_2_name == 'Oliver Bearman':
+        driver_2_name = 'Ollie Bearman'
     
-    driver0_gap, driver1_gap = get_final_gap(session, team_drivers)
+    driver_1_gap, driver_2_gap = get_final_gap(session, team_drivers)
     if 'Race' in row[0]:
         pit0_number, pit0_total_duration, pit1_number, pit1_total_duration = get_pitstop_time(session, team_drivers)
     elif 'Sprint' in row[0]:
@@ -157,53 +157,53 @@ def get_drivers_info(session,team_drivers):
         pit1_total_duration = timedelta(0)
     
     try :
-        driver0_position = driver0_laps['Position'].iloc[-1]
+        driver_1_position = driver_1_laps['Position'].iloc[-1]
     except:
-        driver0_position = 'DNF'
+        driver_1_position = 'DNF'
             
     try:
-        driver1_position = driver1_laps['Position'].iloc[-1]
+        driver_2_position = driver_2_laps['Position'].iloc[-1]
     except:
-        driver1_position = 'DNF'
+        driver_2_position = 'DNF'
         
     try:
-        driver0_laps['LapTime'] = driver0_laps['LapTime'].replace(pd.NaT, timedelta(0))
-        race_time_driver0 = str(driver0_laps['Time'].iloc[-1] - driver0_laps['Time'][0])[8:-3]
-        driver0_avg_lap = str(timedelta(seconds = driver0_laps['LapTime'].dt.total_seconds().median()))[3:-3]
-        q3, q1 = np.percentile(driver0_laps['LapTime'].dt.total_seconds(), [75 ,25])
-        driver0_iqr = round(q3 - q1, 3)
+        driver_1_laps['LapTime'] = driver_1_laps['LapTime'].replace(pd.NaT, timedelta(0))
+        race_time_driver_1 = str(driver_1_laps['Time'].iloc[-1] - driver_1_laps['Time'][0])[8:-3]
+        driver_1_avg_lap = str(timedelta(seconds = driver_1_laps['LapTime'].dt.total_seconds().median()))[3:-3]
+        q3, q1 = np.percentile(driver_1_laps['LapTime'].dt.total_seconds(), [75 ,25])
+        driver_1_iqr = round(q3 - q1, 3)
     except:
-        race_time_driver0 = 0
-        driver0_avg_lap= 0
-        driver0_iqr= 0
+        race_time_driver_1 = 0
+        driver_1_avg_lap= 0
+        driver_1_iqr= 0
         
     try:
-        driver1_laps['LapTime'] = driver1_laps['LapTime'].replace(pd.NaT, timedelta(0))
-        race_time_driver1 = str(driver1_laps['Time'].iloc[-1] - driver1_laps['Time'][0])[8:-3]        
-        driver1_avg_lap = str(timedelta(seconds = driver1_laps['LapTime'].dt.total_seconds().median()))[3:-3]
-        q3, q1 = np.percentile(driver1_laps['LapTime'].dt.total_seconds(), [75 ,25])
-        driver1_iqr = round(q3 - q1, 3)
+        driver_2_laps['LapTime'] = driver_2_laps['LapTime'].replace(pd.NaT, timedelta(0))
+        race_time_driver_2 = str(driver_2_laps['Time'].iloc[-1] - driver_2_laps['Time'][0])[8:-3]        
+        driver_2_avg_lap = str(timedelta(seconds = driver_2_laps['LapTime'].dt.total_seconds().median()))[3:-3]
+        q3, q1 = np.percentile(driver_2_laps['LapTime'].dt.total_seconds(), [75 ,25])
+        driver_2_iqr = round(q3 - q1, 3)
 
     except:
-        race_time_driver1 = 0
-        driver1_avg_lap= 0
-        driver1_iqr= 0
+        race_time_driver_2 = 0
+        driver_2_avg_lap= 0
+        driver_2_iqr= 0
         
     drivers_info = [
-        driver0_name,
-        driver0_position,
-        driver0_gap,
-        race_time_driver0,
-        driver0_avg_lap,
-        driver0_iqr,
+        driver_1_name,
+        driver_1_position,
+        driver_1_gap,
+        race_time_driver_1,
+        driver_1_avg_lap,
+        driver_1_iqr,
         pit0_number,
         pit0_total_duration,
-        driver1_name,
-        driver1_position,
-        driver1_gap,
-        race_time_driver1,
-        driver1_avg_lap,
-        driver1_iqr,
+        driver_2_name,
+        driver_2_position,
+        driver_2_gap,
+        race_time_driver_2,
+        driver_2_avg_lap,
+        driver_2_iqr,
         pit1_number,
         pit1_total_duration,
     ]
@@ -272,14 +272,14 @@ for row in new_arr:
             if 'tyre_strategy' in row[0]:
                 if team in row[0]:
                     tyre_strategy.update({f'{team}':'https://lh3.googleusercontent.com/d/'+row[1][32:65]+'=w1100?authuser=0'})
-            if 'driver0_pace' in row[0]:
+            if 'driver_1_pace' in row[0]:
                 if team in row[0]:
                     pace_comp0.update({f'{team}':'https://lh3.googleusercontent.com/d/'+row[1][32:65]+'=w250?authuser=0'})
-            if 'driver1_pace' in row[0]:
+            if 'driver_2_pace' in row[0]:
                 if team in row[0]:
                     pace_comp1.update({f'{team}':'https://lh3.googleusercontent.com/d/'+row[1][32:65]+'=w250?authuser=0'})
 
-lap_info_per_team = [['EventName', 'TeamLogo', 'laptime_scatterplot', 'laptime_comp', 'tyre_strategy', 'pace_comp0', 'pace_comp1', 'driver0_name', 'driver0_position', 'driver0_gap', 'total_time_driver0', 'avg_laptime_driver0','iqr_driver0', 'pit0_number', 'pit0_total_duration', 'driver1_name', 'driver1_position', 'driver1_gap', 'total_time_driver1', 'avg_laptime_driver1','iqr_driver1', 'pit1_number', 'pit1_total_duration', 'fastest_driver0', 'fastest_driver1', 'safety_car_lap', 'gap_info_per_lap']]
+lap_info_per_team = [['EventName', 'TeamLogo', 'laptime_scatterplot', 'laptime_comp', 'tyre_strategy', 'pace_comp0', 'pace_comp1', 'driver_1_name', 'driver_1_position', 'driver_1_gap', 'total_time_driver_1', 'avg_laptime_driver_1','iqr_driver_1', 'pit0_number', 'pit0_total_duration', 'driver_2_name', 'driver_2_position', 'driver_2_gap', 'total_time_driver_2', 'avg_laptime_driver_2','iqr_driver_2', 'pit1_number', 'pit1_total_duration', 'fastest_driver_1', 'fastest_driver_2', 'safety_car_lap', 'gap_info_per_lap']]
 second_color_dict = {'Red Bull Racing' :'#E30118', 'Alpine':'#2173B8', 'Mercedes':'#C8CCCE', 'Aston Martin':'#CEDC00', 'Ferrari':'#FFF200', 'Racing Bulls':'#0402C4', 'Williams':'#041E42', 'Kick Sauber':'#474f54', 'Haas F1 Team':'#E6002B', 'McLaren':'#47C7FC'}
 race_info = []
 for idx,team in enumerate(teams):

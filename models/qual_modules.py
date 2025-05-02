@@ -24,7 +24,7 @@ fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
 
 year = int(input('Year ? '))
 race_number = int(input('Race Number ? (1-24) '))
-race_session = input('Session ? (Q, SQ)')
+race_session = input('Session ? (Q, SQ) ')
 
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
@@ -37,7 +37,7 @@ q2 = q2[~is_nat]
 is_nat = np.isnat(q3['LapTime'])
 q3 = q3[~is_nat]
 
-filename = f'../reports/reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying/'
+filename = f'/home/kurios/Documents/f1_analysis/reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying/'
 os.makedirs(os.path.dirname(filename), exist_ok=True)
 os.chdir(filename)
 
@@ -99,11 +99,11 @@ def convert_for_cmap(base_color):
     return r, g, b
 
 def get_delta_per_team(team_drivers, quali_session):
-    driver0_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
-    driver1_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
+    driver_1_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
+    driver_2_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
     
-    if type(driver0_lap) != type(None) and type(driver1_lap) != type(None):
-        delta_time, ref_tel, compare_tel = utils.delta_time(driver0_lap, driver1_lap)
+    if type(driver_1_lap) != type(None) and type(driver_2_lap) != type(None):
+        delta_time, ref_tel, compare_tel = utils.delta_time(driver_1_lap, driver_2_lap)
         max_delta = max(abs(min(delta_time)), abs(max(delta_time))) + 0.1 
 
     delta_time_at_corner = [0]
@@ -114,11 +114,11 @@ def get_delta_per_team(team_drivers, quali_session):
                             break
     delta_time_at_corner_diff = np.diff(delta_time_at_corner).tolist()
     delta_time_at_corner_diff = [round(elem, 3) for elem in delta_time_at_corner_diff]
-    delta_per_team.update({f'{sub_session}_{team}': delta_time_at_corner_diff})
+    delta_per_team.update({f'{subsession_name}_{team}': delta_time_at_corner_diff})
     return delta_per_team
 
 def show_corner_advantage_per_quali_session(team_drivers, quali_session):
-    gaps = [1 if gap >= 0 else 0 for gap in delta_per_team[f'{sub_session}_{team}']]
+    gaps = [1 if gap >= 0 else 0 for gap in delta_per_team[f'{subsession_name}_{team}']]
 
     lap = session.laps.pick_drivers(team_drivers[0]).pick_fastest()
     tel = lap.get_telemetry()
@@ -203,20 +203,20 @@ def show_corner_advantage_per_quali_session(team_drivers, quali_session):
     
 def create_bar_graph_per_driver(team_drivers, quali_session):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-    driver0_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
-    driver1_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
-    if type(driver0_lap) != type(None) and type(driver1_lap) != type(None) :
+    driver_1_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
+    driver_2_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
+    if type(driver_1_lap) != type(None) and type(driver_2_lap) != type(None) :
         
-        driver0_tel = driver0_lap.get_car_data()
+        driver_1_tel = driver_1_lap.get_car_data()
     
-        full_throttle = round(len(np.where(driver0_tel['Throttle'].values >= 90)[0])/len(driver0_tel)*100)
-        brake = round(len(np.where(driver0_tel['Brake'] == True)[0])/len(driver0_tel)*100)
+        full_throttle = round(len(np.where(driver_1_tel['Throttle'].values >= 90)[0])/len(driver_1_tel)*100)
+        brake = round(len(np.where(driver_1_tel['Brake'] == True)[0])/len(driver_1_tel)*100)
         cornering = 100 - full_throttle - brake
 
-        driver1_tel = driver1_lap.get_car_data()
+        driver_2_tel = driver_2_lap.get_car_data()
     
-        full_throttle1 = round(len(np.where(driver1_tel['Throttle'].values >= 90)[0])/len(driver1_tel)*100)
-        brake1 = round(len(np.where(driver1_tel['Brake'] == True)[0])/len(driver1_tel)*100)
+        full_throttle1 = round(len(np.where(driver_2_tel['Throttle'].values >= 90)[0])/len(driver_2_tel)*100)
+        brake1 = round(len(np.where(driver_2_tel['Brake'] == True)[0])/len(driver_2_tel)*100)
         cornering1 = 100 - full_throttle - brake
         
         keys=('Full Throttle','Braking', 'Cornering' )
@@ -239,7 +239,7 @@ def create_bar_graph_per_driver(team_drivers, quali_session):
         plt.rcParams['axes.spines.right'] = False
         plt.rcParams['axes.spines.top'] = False
         plt.rcParams['axes.spines.bottom'] = False
-        plt.savefig(fname=f'{sub_session}_{team}_driver1_bar_graph', transparent=True)
+        plt.savefig(fname=f'{subsession_name}_{team}_driver_2_bar_graph', transparent=True)
 
         
         full_throttle_bar1 = np.array([100, full_throttle1])
@@ -261,28 +261,29 @@ def create_bar_graph_per_driver(team_drivers, quali_session):
             left=False,
             labelleft=False,
             labelbottom=False)
-        plt.savefig(fname=f'{sub_session}_{team}_driver1_bar_graph', transparent=True)
+        plt.savefig(fname=f'{subsession_name}_{team}_driver_2_bar_graph', transparent=True)
 
 
 def show_driver_quali_dif_per_lap(team_drivers, quali_session):
-    driver0_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
-    driver1_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
-      
-    fig, ax = plt.subplots(figsize=(13, 2))
+    driver_1_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
+    driver_2_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
+    
     plt.tick_params(
         axis='both',
         which='both',
         bottom=False,
         left=False,
         labelleft=False,
-        labelbottom=False)
+        labelbottom=False)  
     plt.rcParams['axes.spines.left'] = False
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.rcParams['axes.spines.bottom'] = False  
+    
+    fig, ax = plt.subplots(figsize=(13, 2.5))
         
-    if type(driver0_lap) != type(None) and type(driver1_lap) != type(None):
-            delta_time, ref_tel, compare_tel = utils.delta_time(driver0_lap, driver1_lap)
+    if type(driver_1_lap) != type(None) and type(driver_2_lap) != type(None):
+            delta_time, ref_tel, compare_tel = utils.delta_time(driver_1_lap, driver_2_lap)
             max_delta = max(abs(min(delta_time)), abs(max(delta_time))) + 0.1 
             ax.vlines(x=circuit_info.corners['Distance'], ymin=-max_delta, ymax=max_delta, colors='white', linestyle='dotted')
             plt.axhline(y=0, color= team_color_2, linewidth=3)
@@ -297,7 +298,7 @@ def show_driver_quali_dif_per_lap(team_drivers, quali_session):
     delta_time_at_corner.append(round(delta_time.iloc[-1],3))
     delta_time_at_corner_diff = np.diff(delta_time_at_corner).tolist()
     delta_time_at_corner_diff = [round(elem, 3) for elem in delta_time_at_corner_diff]
-    delta_per_team.update({f'{sub_session}_{team}': delta_time_at_corner_diff})
+    delta_per_team.update({f'{subsession_name}_{team}': delta_time_at_corner_diff})
     
     plt.tick_params(
         axis='both',
@@ -320,11 +321,11 @@ def show_driver_quali_dif_per_lap(team_drivers, quali_session):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.rcParams['axes.spines.bottom'] = False
-    plt.savefig(fname=f'{sub_session}_{team}_deltatime', transparent=True)
+    plt.savefig(fname=f'{subsession_name}_{team}_deltatime', transparent=True)
 
     
 def show_fastest_lap_per_quali_session(team_drivers, quali_session):
-    fig, ax = plt.subplots(figsize=(13, 4))
+    fig, ax = plt.subplots(figsize=(13, 4.5))
     plt.tick_params(
         axis='both',
         which='both',
@@ -332,12 +333,12 @@ def show_fastest_lap_per_quali_session(team_drivers, quali_session):
         left=False,
         labelleft=False,
         labelbottom=False)
-    driver0_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
-    driver1_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
-    car_data = driver0_lap.get_car_data().add_distance()
+    driver_1_lap = quali_session.pick_drivers(team_drivers[0]).pick_fastest()
+    driver_2_lap = quali_session.pick_drivers(team_drivers[1]).pick_fastest()
+    car_data = driver_1_lap.get_car_data().add_distance()
     
-    if type(driver0_lap) != type(None) and type(driver1_lap) != type(None):
-            delta_time, ref_tel, compare_tel = utils.delta_time(driver0_lap, driver1_lap)
+    if type(driver_1_lap) != type(None) and type(driver_2_lap) != type(None):
+            delta_time, ref_tel, compare_tel = utils.delta_time(driver_1_lap, driver_2_lap)
     for driver in team_drivers:
         driver_lap = quali_session.pick_drivers(driver).pick_fastest()
         v_min = car_data['Speed'].min()
@@ -348,6 +349,11 @@ def show_fastest_lap_per_quali_session(team_drivers, quali_session):
             driver_tel = driver_lap.get_car_data().add_distance()
 
             car_data = driver_lap.get_car_data().add_distance()
+            
+            for _, corner in circuit_info.corners.iterrows():
+                txt = f"{corner['Number']}{corner['Letter']}"
+                ax.text(corner['Distance'], v_min-(v_min*0.4), txt,
+                        va='center_baseline', ha='center', size='xx-large')
 
             if driver == team_drivers[0] :
                 ax.vlines(x=circuit_info.corners['Distance'], ymin = -v_min - 20 , ymax = v_max + 30, colors='white', linestyle='dotted')
@@ -368,42 +374,28 @@ def show_fastest_lap_per_quali_session(team_drivers, quali_session):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.rcParams['axes.spines.bottom'] = False
-    plt.savefig(fname=f'{sub_session}_{team}_speed', transparent=True)
+    plt.savefig(fname=f'{subsession_name}_{team}_speed', transparent=True)
 
 delta_per_team = {}
-for idx, team in enumerate(teams):
-    team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-    team_color = fastf1.plotting.get_team_color(team, session=session)
-    df_color=pd.read_csv("/home/kurios/Documents/f1_analysis/data/raw/second_color.csv", index_col='team')
-    team_color_2 = df_color.iat[idx,0]
-
-    if team_drivers[0] in  q1['Driver'].values and team_drivers[1] in  q1['Driver'].values:
-        sub_session = 'Q1'
+for subsession in [q1, q2, q3]:
+    if subsession is q1:
+        subsession_name = 'Q1'
+    elif subsession is q2:
+        subsession_name = 'Q2'
+    elif subsession is q3:
+        subsession_name = 'Q3'
+    for idx, team in enumerate(teams):
+        team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
+        team_color = fastf1.plotting.get_team_color(team, session=session)
+        df_color=pd.read_csv("/home/kurios/Documents/f1_analysis/data/raw/second_color.csv", index_col='team')
+        team_color_2 = df_color.iat[idx,0]
         try:
-            delta_per_team = get_delta_per_team(team_drivers, q1)
-            show_driver_quali_dif_per_lap(team_drivers, q1)
-            show_fastest_lap_per_quali_session(team_drivers, q1)
-            show_corner_advantage_per_quali_session(team_drivers=team_drivers, quali_session = q1)
-            create_bar_graph_per_driver(team_drivers, q1)
+            os.chdir(filename)
+            delta_per_team = get_delta_per_team(team_drivers, subsession)
+            show_driver_quali_dif_per_lap(team_drivers, subsession)
+            show_fastest_lap_per_quali_session(team_drivers, subsession)
+            show_corner_advantage_per_quali_session(team_drivers=team_drivers, quali_session = subsession)
+            create_bar_graph_per_driver(team_drivers, subsession)
         except:
-            print(f'No data in {sub_session} for {team}')
-    if team_drivers[0] in  q2['Driver'].values and team_drivers[1] in  q2['Driver'].values:
-        sub_session = 'Q2'
-        try:
-            delta_per_team = get_delta_per_team(team_drivers, q2)
-            show_driver_quali_dif_per_lap(team_drivers, q2)
-            show_fastest_lap_per_quali_session(team_drivers, q2)
-            show_corner_advantage_per_quali_session(team_drivers=team_drivers, quali_session = q2)
-            create_bar_graph_per_driver(team_drivers, q2)
-        except:
-            print(f'No data in {sub_session} for {team}')
-    if team_drivers[0] in  q3['Driver'].values and team_drivers[1] in  q3['Driver'].values:
-        sub_session = 'Q3'
-        try:
-            delta_per_team = get_delta_per_team(team_drivers, q3)
-            show_driver_quali_dif_per_lap(team_drivers, q3)
-            show_fastest_lap_per_quali_session(team_drivers, q3)
-            show_corner_advantage_per_quali_session(team_drivers=team_drivers, quali_session = q3)
-            create_bar_graph_per_driver(team_drivers, q3)
-        except:
-            print(f'No data in {sub_session} for {team}')
+            print(f'No data in {subsession_name} for {team}')
+        
