@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import matplotlib.colors as mcolors
+from pathlib import Path
 
 import numpy as np 
 import pandas as pd
@@ -13,28 +14,33 @@ import fastf1.plotting
 from fastf1 import utils
 
 from pptx import Presentation
-from pptx.util import Pt, Inches
+from pptx.util import Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_CONNECTOR
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.oxml.xmlchemy import OxmlElement
 from pptx.enum.text import PP_ALIGN
 
-
 import os
 import csv
 
-cache_folder = 'cache_folder'
-if not os.path.exists(cache_folder):
-    os.makedirs(cache_folder)
+parent_file = Path(__file__).resolve().parent.parent
+
+cache_folder = parent_file / 'cache_folder'
+cache_folder.mkdir(exist_ok=True)
+
 fastf1.Cache.enable_cache(cache_folder)
 
 fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
                           color_scheme='fastf1')
 
-year = int(input('Year ? '))
-race_number = int(input('Race Number ? (1-24) '))
-race_session = input('Session ? (Q, SQ) ')
+#year = int(input('Year ? '))
+#race_number = int(input('Race Number ? (1-24) '))
+#race_session = input('Session ? (Q, SQ) ')
+
+year = 2025
+race_number = 2
+race_session = 'Q'
 
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
@@ -47,12 +53,14 @@ q2 = q2[~is_nat]
 is_nat = np.isnat(q3['LapTime'])
 q3 = q3[~is_nat]
 if race_session == 'Q':
-    filename = f'/home/kurios/Documents/f1_analysis/reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying/'
-elif race_session == 'SQ':
-    filename = f'/home/kurios/Documents/f1_analysis/reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Sprint Qualifying/'
+    figures_folder = parent_file / 'reports' / 'figures' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying"
+    report_folder = parent_file / 'reports' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying"
+else:
+    figures_folder = parent_file / 'reports' / 'figures' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Sprint_Qualifying"
+    report_folder = parent_file / 'reports' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Sprint_Qualifying"
 
-os.makedirs(os.path.dirname(filename), exist_ok=True)
-os.chdir(filename)
+report_folder.mkdir(parents=True, exist_ok=True)
+figures_folder.mkdir(parents=True, exist_ok=True)
 
 event_name = session.event.EventName
 circuit_info = session.get_circuit_info()
@@ -213,7 +221,7 @@ def show_corner_advantage_per_quali_session(team_drivers, quali_session):
     plt.axis('equal')
     plt.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
     fig.tight_layout()
-    plt.savefig(fname=f'{subsession_name}_{team}_corner_domination', transparent=True)
+    plt.savefig(fname= figures_folder / f'{subsession_name}_{team}_corner_domination', transparent=True)
 
     
 def create_bar_graph_per_driver(team_drivers, quali_session):
@@ -254,7 +262,7 @@ def create_bar_graph_per_driver(team_drivers, quali_session):
         plt.rcParams['axes.spines.right'] = False
         plt.rcParams['axes.spines.top'] = False
         plt.rcParams['axes.spines.bottom'] = False
-        plt.savefig(fname=f'{subsession_name}_{team}_driver_1_bar_graph', transparent=True)
+        plt.savefig(fname= figures_folder / f'{subsession_name}_{team}_driver_1_bar_graph', transparent=True)
 
         
         full_throttle_bar1 = np.array([100, full_throttle1])
@@ -276,7 +284,7 @@ def create_bar_graph_per_driver(team_drivers, quali_session):
             left=False,
             labelleft=False,
             labelbottom=False)
-        plt.savefig(fname=f'{subsession_name}_{team}_driver_2_bar_graph', transparent=True)
+        plt.savefig(fname= figures_folder / f'{subsession_name}_{team}_driver_2_bar_graph', transparent=True)
 
 
 def show_driver_quali_dif_per_lap(team_drivers, quali_session):
@@ -336,7 +344,7 @@ def show_driver_quali_dif_per_lap(team_drivers, quali_session):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.rcParams['axes.spines.bottom'] = False
-    plt.savefig(fname=f'{subsession_name}_{team}_deltatime', transparent=True)
+    plt.savefig(fname= figures_folder / f'{subsession_name}_{team}_deltatime', transparent=True)
 
     
 def show_fastest_lap_per_quali_session(team_drivers, quali_session):
@@ -389,7 +397,7 @@ def show_fastest_lap_per_quali_session(team_drivers, quali_session):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.rcParams['axes.spines.bottom'] = False
-    plt.savefig(fname=f'{subsession_name}_{team}_speed', transparent=True)
+    plt.savefig(fname= figures_folder / f'{subsession_name}_{team}_speed', transparent=True)
 
 
 def show_driver_delta(team_drivers, quali_session, delta_per_team):
@@ -449,6 +457,10 @@ def create_csv_lap_info(quali_session, list):
         if type(driver_lap) != type(None):
             if team_drivers[0] in  quali_session['Driver'].values and team_drivers[1] in  quali_session['Driver'].values:
                 driver_name = fastf1.plotting.get_driver_name(driver, session)
+                if driver_name == 'Andrea Kimi Antonelli':
+                    driver_name = 'Kimi Antonelli'
+                elif driver_name == 'Oliver Bearman':
+                    driver_name = 'Ollie Bearman'
                 driver_tel = driver_lap.get_car_data()
                 full_throttle = round(len(np.where(driver_tel['Throttle'].values >= 90)[0])/len(driver_tel)*100)
                 brake = round(len(np.where(driver_tel['Brake'] == True)[0])/len(driver_tel)*100)
@@ -497,7 +509,6 @@ def SubElement(parent, tagname, **kwargs):
         return element
 
 def _set_shape_transparency(shape, alpha):
-    """ Set the transparency (alpha) of a shape"""
     ts = shape.fill._xPr.solidFill
     sF = ts.get_or_change_to_srgbClr()
     sE = SubElement(sF, 'a:alpha', val=str(alpha))
@@ -516,10 +527,9 @@ for subsession in [q1, q2, q3]:
     for idx, team in enumerate(teams):
         team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
         team_color = fastf1.plotting.get_team_color(team, session=session)
-        df_color=pd.read_csv("/home/kurios/Documents/f1_analysis/data/raw/second_color.csv", index_col='team')
+        df_color=pd.read_csv(parent_file / "data/raw/second_color.csv", index_col='team')
         team_color_2 = df_color.iat[idx,0]
         try:
-            os.chdir(filename)
             delta_per_team = get_delta_per_team(team_drivers, subsession)
             show_driver_quali_dif_per_lap(team_drivers, subsession)
             show_fastest_lap_per_quali_session(team_drivers, subsession)
@@ -567,7 +577,7 @@ for idx, team in enumerate(teams):
             driver_info_figma_q3 = create_csv_lap_info(q3, lap_info_per_driver_q3)
     except:
         print(f'{team} not found') 
-os.chdir('/home/kurios/Documents/f1_analysis/reports/csv')
+os.chdir(parent_file / 'reports/csv')
 with open(csv_file_path_q1, mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerows(driver_info_figma_q1)
@@ -587,13 +597,12 @@ df_corner_segments = pd.DataFrame(corner_segments)
 df_corner_segments.to_csv(csv_file_path_corner_segments, index=False)
 
 
-figures_path = '/home/kurios/Documents/f1_analysis/reports/figures/'
 if race_session == 'Q':
     race_session_name = 'Qualifying'
 elif race_session == 'SQ':
     race_session_name = 'Sprint Qualifying'
 
-path = '/home/kurios/Documents/f1_analysis/reports/csv/'
+path = parent_file / 'reports/csv/'
 
 for subsession in [q1, q2, q3]:
     prs = Presentation()
@@ -630,22 +639,18 @@ for subsession in [q1, q2, q3]:
     for idx, team in enumerate(teams):
         team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
         team_color = fastf1.plotting.get_team_color(team, session=session)
-        df_color=pd.read_csv("/home/kurios/Documents/f1_analysis/data/raw/second_color.csv", index_col='team')
+        df_color=pd.read_csv(parent_file / "data/raw/second_color.csv", index_col='team')
         team_color_2 = df_color.iat[idx,0]
         team_color = Hex_RGB(team_color)
         team_color_2 = Hex_RGB(team_color_2)
         
         if team_drivers[0] in  subsession['Driver'].values and team_drivers[1] in  subsession['Driver'].values:
-            try:
+            #try:
                 race_name = arr[counter][0]
-                os.chdir(figures_path)
-                team_logo = f'/home/kurios/Documents/f1_analysis/data/external/team_logos/{team}.png'
-                os.chdir(figures_path)
-                corner_domination = f'{race_number}_{event_name}_{year}_{race_session_name}/{subsession_name}_{team}_corner_domination.png'
-                os.chdir(figures_path)
-                delta_time = f'{race_number}_{event_name}_{year}_{race_session_name}/{subsession_name}_{team}_deltatime.png'
-                os.chdir(figures_path)
-                speed = f'{race_number}_{event_name}_{year}_{race_session_name}/{subsession_name}_{team}_speed.png'
+                team_logo = parent_file / f'data/external/team_logos/{team}.png'
+                corner_domination = figures_folder / f'{subsession_name}_{team}_corner_domination.png'
+                delta_time = figures_folder / f'{subsession_name}_{team}_deltatime.png'
+                speed = figures_folder / f'{subsession_name}_{team}_speed.png'
                 
                 name_driver_1 = arr[counter][1]
                 lap_time_driver_1 = arr[counter][2]
@@ -661,8 +666,7 @@ for subsession in [q1, q2, q3]:
                 throttling_driver_1 = arr[counter][9]
                 braking_driver_1 = arr[counter][10]
                 cornering_driver_1 = arr[counter][11]
-                os.chdir(figures_path)
-                bar_graph_driver_1 = f'/{race_number}_{event_name}_{year}_{race_session_name}/{subsession_name}_{team}_driver_1_bar_graph.png'
+                bar_graph_driver_1 =  figures_folder / f'{subsession_name}_{team}_driver_1_bar_graph.png'
 
                 name_driver_2 = arr[counter][12]
                 lap_time_driver_2 = arr[counter][13]
@@ -677,8 +681,7 @@ for subsession in [q1, q2, q3]:
                 throttling_driver_2 = arr[counter][20]
                 braking_driver_2 = arr[counter][21]
                 cornering_driver_2 = arr[counter][22]
-                os.chdir(figures_path)
-                bar_graph_driver_2 = f'/{race_number}_{event_name}_{year}_{race_session_name}/{subsession_name}_{team}_driver_2_bar_graph.png'
+                bar_graph_driver_2 = figures_folder / f'{subsession_name}_{team}_driver_2_bar_graph.png'
                 
                 v_min = arr[counter][-4]
                 v_max = arr[counter][-3]
@@ -732,8 +735,8 @@ for subsession in [q1, q2, q3]:
                 _set_shape_transparency(shape,15000)
                 
                 #HEADER
-                f1_logo = '/home/kurios/Documents/f1_analysis/data/external/team_logos/F1_75_Logo.png'
-                pic = slide.shapes.add_picture(f1_logo, Pt(40), Pt(54), height=Pt(32), width= Pt(200))
+                f1_logo = parent_file / 'data/external/team_logos/F1_75_Logo.png'
+                pic = slide.shapes.add_picture(str(f1_logo), Pt(40), Pt(54), height=Pt(32), width= Pt(200))
 
                 title = slide.shapes.title
                 title.text = race_name
@@ -744,7 +747,7 @@ for subsession in [q1, q2, q3]:
                 title.text_frame.paragraphs[0].font.size = Pt(38)
                 title.text_frame.paragraphs[0].font.name = 'Formula1 Display Bold'
 
-                pic = slide.shapes.add_picture(team_logo, Pt(820), Pt(25), height= Pt(100), width=Pt(200))
+                pic = slide.shapes.add_picture(str(team_logo), Pt(820), Pt(25), height= Pt(100), width=Pt(200))
                 
                 #STRUCTURE
                 line1=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(40), Pt(130), Pt(1000), Pt(2))
@@ -779,12 +782,11 @@ for subsession in [q1, q2, q3]:
 
                 #TRANSPARENT FIGURES
                 transparent_counter = 0
-                os.chdir(path)
-                df_delta = pd.read_csv(f'{race_number}_{race_session}_drivers_info_delta_per_team.csv')
+                df_delta = pd.read_csv(parent_file / f'reports/csv/{race_number}_{race_session}_drivers_info_delta_per_team.csv')
                 df_delta_columns = list(df_delta.columns)
                 delta_index = df_delta_columns.index(f'{subsession_name}_{team}')
                 
-                df_corner = pd.read_csv(f'{race_number}_{race_session}_drivers_info_corner_segments.csv')
+                df_corner = pd.read_csv(parent_file / f'reports/csv/{race_number}_{race_session}_drivers_info_corner_segments.csv')
                 df_corner_columns = list(df_corner.columns)
                 corner_index = df_corner_columns.index(f'{subsession_name}_{team}')
         
@@ -818,15 +820,15 @@ for subsession in [q1, q2, q3]:
                     transparent_counter += 1
 
                 #FIGURES
-                pic = slide.shapes.add_picture(image_file=(figures_path+corner_domination), left=Pt(342), top = Pt(75), height= Pt(395), width=Pt(395))
+                pic = slide.shapes.add_picture(image_file=(str(corner_domination)), left=Pt(342), top = Pt(75), height= Pt(395), width=Pt(395))
 
-                pic = slide.shapes.add_picture(image_file=(figures_path+bar_graph_driver_1), left=Pt(0), top=Pt(565), height= Pt(228), width=Pt(543))
+                pic = slide.shapes.add_picture(image_file=(str(bar_graph_driver_1)), left=Pt(0), top=Pt(565), height= Pt(228), width=Pt(543))
 
-                pic = slide.shapes.add_picture(image_file=(figures_path+bar_graph_driver_2), left=Pt(523), top= Pt(565), height= Pt(228), width=Pt(543))
+                pic = slide.shapes.add_picture(image_file=(str(bar_graph_driver_2)), left=Pt(523), top= Pt(565), height= Pt(228), width=Pt(543))
 
-                pic = slide.shapes.add_picture(image_file=(figures_path+delta_time), left=Pt(30), top=Pt(1140), height=Pt(195), width=Pt(1018))
+                pic = slide.shapes.add_picture(image_file=(str(delta_time)), left=Pt(30), top=Pt(1140), height=Pt(195), width=Pt(1018))
 
-                pic = slide.shapes.add_picture(image_file=(figures_path+speed), left=Pt(30), top= Pt(798),height=Pt(355), width=Pt(1018))
+                pic = slide.shapes.add_picture(image_file=(str(speed)), left=Pt(30), top= Pt(798),height=Pt(355), width=Pt(1018))
 
                 #REFERENCES
                 txBox = slide.shapes.add_textbox(left=Pt(70), top= Pt(120), width=Pt(0), height=Pt(20))
@@ -1390,10 +1392,9 @@ for subsession in [q1, q2, q3]:
                 run.font.bold = True
                 run.font.color.rgb = RGBColor(255, 255, 255)
                 counter +=1
-            except:
-                xml_slides = prs.slides._sldIdLst  
-                slides = list(xml_slides)
-                xml_slides.remove(slides[counter]) 
-                print(f'{team} not in {subsession_name}')
-    os.chdir('/home/kurios/Documents/f1_analysis/reports/reports/test/')
-    prs.save(f'{race_number}_{subsession_name}_{race_session_name}.pptx')
+            #except:
+                #xml_slides = prs.slides._sldIdLst  
+                #slides = list(xml_slides)
+                #xml_slides.remove(slides[counter]) 
+                #print(f'{team} not in {subsession_name}')
+    prs.save(parent_file / report_folder / f'{race_number}_{subsession_name}_{race_session_name}.pptx')
