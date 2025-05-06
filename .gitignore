@@ -1,7 +1,7 @@
 # Data
 /data/
-/reports/
 /cache_folder/
+/reports/
 # Mac OS-specific storage files
 .DS_Store
 
