@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import ast
 
+from pathlib import Path
 from matplotlib.ticker import FuncFormatter
 from pptx import Presentation
 from pptx.util import Pt
@@ -24,9 +25,11 @@ from pptx.oxml.xmlchemy import OxmlElement
 
 ergast = Ergast()
 
-cache_folder = 'cache_folder'
-if not os.path.exists(cache_folder):
-    os.makedirs(cache_folder)
+parent_file = Path(__file__).resolve().parent.parent
+
+cache_folder = parent_file / 'cache_folder'
+cache_folder.mkdir(exist_ok=True)
+
 fastf1.Cache.enable_cache(cache_folder)
 
 fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
@@ -39,9 +42,16 @@ race_session = input('Session ? (R, S) ')
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
 
-filename = f'/home/kurios/Documents/f1_analysis/reports/figures/{race_number}_{session.event["EventName"]}_{session.event.year}_Race/'
-os.makedirs(os.path.dirname(filename), exist_ok=True)
-os.chdir(filename)
+if race_session == 'R':
+    race_session_name = 'Race'
+elif race_session == 'S':
+    race_session_name = 'Sprint'
+    
+figures_folder = parent_file / 'reports' / 'figures' / f'{race_number}_{session.event["EventName"]}_{session.event.year}/'
+report_folder = parent_file / 'reports' / f"{race_number}_{session.event["EventName"]}_{session.event.year}/"
+
+figures_folder.mkdir(parents=True, exist_ok=True)
+report_folder.mkdir(parents=True, exist_ok=True)
 
 pit = ergast.get_pit_stops(season = year, round = race_number )
 event_name = session.event.EventName
@@ -78,13 +88,12 @@ def show_laptime_comp(team_drivers, session):
     labelbottom=False)
     
     plt.grid(color='w', which='major', axis='both', linestyle='dotted')
-    os.chdir(filename)
-    plt.savefig(fname=f'{session.name}_{team}_laptime_comp', transparent=True)
+    plt.savefig(fname= figures_folder / f'{session.name}_{team}_laptime_comp', transparent=True)
     
 def show_laptime_scatterplot(team_drivers, session):
     driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
     driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber']))+1))).reset_index()
-
+    
     if len(driver_1_laps) > 1:
         driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
     if len(driver_2_laps) > 1:
@@ -115,11 +124,15 @@ def show_laptime_scatterplot(team_drivers, session):
     
     fig, ax = plt.subplots(figsize=(5.75, 4.2))
     
+    palette = fastf1.plotting.get_compound_mapping(session=session)
+    palette['nan'] = palette['UNKNOWN']
+    palette['nan'] = '#00ffff'
+    
     sns.scatterplot(data=driver_1_laps,
                     x="LapNumber",
                     y="LapTime",
                     hue = 'Compound',
-                    palette=fastf1.plotting.get_compound_mapping(session=session),
+                    palette=palette,
                     edgecolor = team_color,
                     style="Compound",
                     s=50,
@@ -129,7 +142,7 @@ def show_laptime_scatterplot(team_drivers, session):
                     x="LapNumber",
                     y="LapTime",
                     hue = 'Compound',
-                    palette=fastf1.plotting.get_compound_mapping(session=session),
+                    palette=palette,
                     edgecolor = team_color_2,
                     style="Compound",
                     s=50,
@@ -147,8 +160,7 @@ def show_laptime_scatterplot(team_drivers, session):
     plt.grid(color='w', which='major', axis='both', linestyle='dotted')
 
     plt.tight_layout()
-    os.chdir(filename)
-    plt.savefig(fname=f'{session.name}_{team}_laptime_scatterplot', transparent=True)
+    plt.savefig(fname = figures_folder / f'{session.name}_{team}_laptime_scatterplot', transparent=True)
 
     
 def show_pace_comp(team_drivers, session):
@@ -208,8 +220,8 @@ def show_pace_comp(team_drivers, session):
     plt.xticks(visible=False)
     plt.grid(color='w', which='major', axis='y', linestyle='dotted')
     plt.tight_layout()
-    os.chdir(filename)
-    plt.savefig(fname=f'{session.name}_{team}_driver_1_pace', transparent=True)
+    os.chdir(figures_folder)
+    plt.savefig(fname= figures_folder / f'{session.name}_{team}_driver_1_pace', transparent=True)
 
     fig, ax = plt.subplots(figsize=(2.5, 4.2))
     if "LapTime" in transformed_driver_2_laps.columns and transformed_driver_2_laps["LapTime"].dropna().size > 0:
@@ -234,8 +246,7 @@ def show_pace_comp(team_drivers, session):
     plt.xticks(visible=False)
     plt.grid(color='w', which='major', axis='y', linestyle='dotted')
     plt.tight_layout()
-    os.chdir(filename)
-    plt.savefig(fname=f'{session.name}_{team}_driver_2_pace', transparent=True)
+    plt.savefig(fname= figures_folder / f'{session.name}_{team}_driver_2_pace', transparent=True)
 
     
 def show_tyre_strategy(team_drivers, session):
@@ -286,8 +297,7 @@ def show_tyre_strategy(team_drivers, session):
     ax.set_xlim([0, last_lap])
 
     plt.tight_layout()
-    os.chdir(filename)
-    plt.savefig(fname=f'{session.name}_{team}_tyre_strategy', transparent=True)
+    plt.savefig(fname= figures_folder / f'{session.name}_{team}_tyre_strategy', transparent=True)
     
 def get_pitstop_time(session, team_drivers):
     driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session).split()[1].lower()
@@ -379,7 +389,7 @@ def get_final_gap(session, team_drivers):
         driver_1_laps.loc[0, 'LapTime'] = driver_1_laps.loc[1, 'LapStartTime'] - driver_1_laps.loc[0, 'LapStartTime']
     if len(driver_2_laps) > 1:
         driver_2_laps.loc[0, 'LapTime'] = driver_2_laps.loc[1, 'LapStartTime'] - driver_2_laps.loc[0, 'LapStartTime']
-        
+
     zero_time = timedelta(0)
     if len(driver_1_laps) == len(driver_2_laps):
         if driver_1_laps['Time'].iloc[-1] > driver_2_laps['Time'].iloc[-1]:
@@ -490,7 +500,6 @@ def get_drivers_info(session,team_drivers):
     
 def create_csv_race_info(session, team, list, drivers_info, team_info):
     race_info_csv = list
-    df_logo=pd.read_csv("/home/kurios/Documents/f1_analysis/data/raw/team_logo.csv", index_col='team')
     if race_session == 'R':
         event_title = event_name.split(' ', 1)[0]+ ' GP Race '
     elif race_session == 'S':
@@ -524,8 +533,9 @@ def to_str(var):
 for idx,team in enumerate(teams):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
     team_color = fastf1.plotting.get_team_color(team, session=session)
-    df_color=pd.read_csv("/home/kurios/Documents/f1_analysis/data/raw/second_color.csv", index_col='team')
+    df_color=pd.read_csv(parent_file / "data/raw/second_color.csv", index_col='team')
     team_color_2 = df_color.iat[idx,0]
+    
     show_pace_comp(team_drivers, session)
     show_laptime_scatterplot(team_drivers, session)
     show_laptime_comp(team_drivers, session)
@@ -551,24 +561,16 @@ for idx,team in enumerate(teams):
     fastest_driver_per_lap_dict.update({f'{team}':fastest_driver_per_lap_per_team})
     team_info = get_lap_repartition( fastest_driver_per_lap_per_team)
     race_info = create_csv_race_info(session, team, lap_info_per_team, drivers_info, team_info)
-os.chdir('/home/kurios/Documents/f1_analysis/reports/csv')
+os.chdir(parent_file / 'reports/csv')
 with open(csv_file_path, mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerows(race_info)
-    
-figures_path = '/home/kurios/Documents/f1_analysis/reports/figures/'
-if race_session == 'R':
-    race_session_name = 'Race'
-elif race_session == 'S':
-    race_session_name = 'Sprint'
-
-path = '/home/kurios/Documents/f1_analysis/reports/csv/'
 
 keyword = f'{race_number}_{race_session}_race_info'
-for fname in os.listdir(path):
+for fname in os.listdir(parent_file / 'reports/csv'):
     if keyword in fname:
         driver_data = fname
-os.chdir(path)
+os.chdir(parent_file / 'reports/csv')
 arr = pd.read_csv(driver_data)
 
 counter = 0
@@ -577,7 +579,7 @@ prs = Presentation()
 for idx, team in enumerate(teams):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
     team_color = fastf1.plotting.get_team_color(team, session=session)
-    df_color=pd.read_csv("/home/kurios/Documents/f1_analysis/data/raw/second_color.csv", index_col='team')
+    df_color=pd.read_csv(parent_file / "data/raw/second_color.csv", index_col='team')
     team_color_2 = df_color.iat[idx,0]
     team_color = Hex_RGB(team_color)
     team_color_2 = Hex_RGB(team_color_2)
@@ -585,18 +587,12 @@ for idx, team in enumerate(teams):
     if team_drivers[0] in  session.laps['Driver'].values and team_drivers[1] in  session.laps['Driver'].values:
         try:
             race_name = arr.iloc[counter]['EventName']
-            os.chdir(figures_path)
-            team_logo = f'/home/kurios/Documents/f1_analysis/data/external/team_logos/{team}.png'
-            os.chdir(figures_path)
-            laptime_comp = f'{race_number}_{event_name}_{year}_{race_session_name}/{race_session_name}_{team}_laptime_comp.png'
-            os.chdir(figures_path)
-            laptime_scatterplot = f'{race_number}_{event_name}_{year}_{race_session_name}/{race_session_name}_{team}_laptime_scatterplot.png'
-            os.chdir(figures_path)
-            tyre_strategy = f'{race_number}_{event_name}_{year}_{race_session_name}/{race_session_name}_{team}_tyre_strategy.png'
-            os.chdir(figures_path)
-            driver_1_pace = f'/{race_number}_{event_name}_{year}_{race_session_name}/{race_session_name}_{team}_driver_1_pace.png'
-            os.chdir(figures_path)
-            driver_2_pace = f'/{race_number}_{event_name}_{year}_{race_session_name}/{race_session_name}_{team}_driver_2_pace.png'
+            team_logo = parent_file / f'data/external/team_logos/{team}.png'
+            laptime_comp = figures_folder / f'{race_session_name}_{team}_laptime_comp.png'
+            laptime_scatterplot = figures_folder / f'{race_session_name}_{team}_laptime_scatterplot.png'
+            tyre_strategy = figures_folder / f'{race_session_name}_{team}_tyre_strategy.png'
+            driver_1_pace = figures_folder / f'{race_session_name}_{team}_driver_1_pace.png'
+            driver_2_pace = figures_folder / f'{race_session_name}_{team}_driver_2_pace.png'
             
             name_driver_1 = arr.iloc[counter]['driver_1_name']
             driver_1_position = arr.iloc[counter]['driver_1_position']
@@ -688,8 +684,8 @@ for idx, team in enumerate(teams):
             _set_shape_transparency(shape,15000)
             
             #HEADER
-            f1_logo = '/home/kurios/Documents/f1_analysis/data/external/team_logos/F1_75_Logo.png'
-            pic = slide.shapes.add_picture(f1_logo, Pt(40), Pt(54), height=Pt(32), width= Pt(200))
+            f1_logo = parent_file / 'data/external/team_logos/F1_75_Logo.png'
+            pic = slide.shapes.add_picture(str(f1_logo), Pt(40), Pt(54), height=Pt(32), width= Pt(200))
 
             title = slide.shapes.title
             title.text = race_name
@@ -700,7 +696,7 @@ for idx, team in enumerate(teams):
             title.text_frame.paragraphs[0].font.size = Pt(42)
             title.text_frame.paragraphs[0].font.name = 'Formula1 Display Bold'
 
-            pic = slide.shapes.add_picture(team_logo, Pt(820), Pt(25), height= Pt(100), width=Pt(200))
+            pic = slide.shapes.add_picture(str(team_logo), Pt(820), Pt(25), height= Pt(100), width=Pt(200))
             
             #STRUCTURE
             line1=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(40), Pt(130), Pt(1000), Pt(2))
@@ -774,16 +770,16 @@ for idx, team in enumerate(teams):
                 lap_counter += 1
             
             #FIGURES
-            pic = slide.shapes.add_picture(image_file=(figures_path+laptime_scatterplot), left=Pt(249), top=Pt(283), height=Pt(420), width=Pt(575))
+            pic = slide.shapes.add_picture(image_file=(str(laptime_scatterplot)), left=Pt(249), top=Pt(283), height=Pt(420), width=Pt(575))
 
-            pic = slide.shapes.add_picture(image_file=(figures_path+driver_1_pace), left=Pt(19), top=Pt(284), height= Pt(390.5), width=Pt(270))
+            pic = slide.shapes.add_picture(image_file=(str(driver_1_pace)), left=Pt(19), top=Pt(284), height= Pt(390.5), width=Pt(270))
 
-            pic = slide.shapes.add_picture(image_file=(figures_path+driver_2_pace), left=Pt(790), top= Pt(284), height= Pt(390), width=Pt(270))
+            pic = slide.shapes.add_picture(image_file=(str(driver_2_pace)), left=Pt(790), top= Pt(284), height= Pt(390), width=Pt(270))
             
-            pic = slide.shapes.add_picture(image_file=(figures_path+laptime_comp), left=Pt(-28), top = Pt(722), height= Pt(500), width=Pt(1108))
+            pic = slide.shapes.add_picture(image_file=(str(laptime_comp)), left=Pt(-28), top = Pt(722), height= Pt(500), width=Pt(1108))
 
-            pic = slide.shapes.add_picture(image_file=(figures_path+tyre_strategy), left=Pt(45), top= Pt(1150),height=Pt(125), width=Pt(943))
-            
+            pic = slide.shapes.add_picture(image_file=(str(tyre_strategy)), left=Pt(45), top= Pt(1150),height=Pt(125), width=Pt(943))
+
             #REFERENCES
             txBox = slide.shapes.add_textbox(left=Pt(70), top= Pt(120), width=Pt(0), height=Pt(20))
             tf = txBox.text_frame
@@ -1227,5 +1223,4 @@ for idx, team in enumerate(teams):
             slides = list(xml_slides)
             xml_slides.remove(slides[counter]) 
             print(f'{team} not in {race_session_name}')
-    os.chdir('/home/kurios/Documents/f1_analysis/reports/reports/test/')
-    prs.save(f'{race_number}_{race_session_name}.pptx')
+    prs.save(report_folder / f'{race_number}_{race_session_name}.pptx')

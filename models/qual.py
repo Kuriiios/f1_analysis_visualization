@@ -34,13 +34,9 @@ fastf1.Cache.enable_cache(cache_folder)
 fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
                           color_scheme='fastf1')
 
-#year = int(input('Year ? '))
-#race_number = int(input('Race Number ? (1-24) '))
-#race_session = input('Session ? (Q, SQ) ')
-
-year = 2025
-race_number = 2
-race_session = 'Q'
+year = int(input('Year ? '))
+race_number = int(input('Race Number ? (1-24) '))
+race_session = input('Session ? (Q, SQ) ')
 
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
@@ -52,12 +48,14 @@ is_nat = np.isnat(q2['LapTime'])
 q2 = q2[~is_nat]
 is_nat = np.isnat(q3['LapTime'])
 q3 = q3[~is_nat]
+
 if race_session == 'Q':
-    figures_folder = parent_file / 'reports' / 'figures' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying"
-    report_folder = parent_file / 'reports' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Qualifying"
-else:
-    figures_folder = parent_file / 'reports' / 'figures' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Sprint_Qualifying"
-    report_folder = parent_file / 'reports' / f"{race_number}_{session.event["EventName"]}_{session.event.year}_Sprint_Qualifying"
+    race_session_name = 'Qualifying'
+elif race_session == 'SQ':
+    race_session_name = 'Sprint Qualifying'
+
+figures_folder = parent_file / 'reports' / 'figures' / f"{race_number}_{session.event["EventName"]}_{session.event.year}"
+report_folder = parent_file / 'reports' / f"{race_number}_{session.event["EventName"]}_{session.event.year}"
 
 report_folder.mkdir(parents=True, exist_ok=True)
 figures_folder.mkdir(parents=True, exist_ok=True)
@@ -596,12 +594,6 @@ df_delta_per_team.to_csv(csv_file_path_delta_per_team, index=False)
 df_corner_segments = pd.DataFrame(corner_segments)
 df_corner_segments.to_csv(csv_file_path_corner_segments, index=False)
 
-
-if race_session == 'Q':
-    race_session_name = 'Qualifying'
-elif race_session == 'SQ':
-    race_session_name = 'Sprint Qualifying'
-
 path = parent_file / 'reports/csv/'
 
 for subsession in [q1, q2, q3]:
@@ -645,7 +637,7 @@ for subsession in [q1, q2, q3]:
         team_color_2 = Hex_RGB(team_color_2)
         
         if team_drivers[0] in  subsession['Driver'].values and team_drivers[1] in  subsession['Driver'].values:
-            #try:
+            try:
                 race_name = arr[counter][0]
                 team_logo = parent_file / f'data/external/team_logos/{team}.png'
                 corner_domination = figures_folder / f'{subsession_name}_{team}_corner_domination.png'
@@ -1392,9 +1384,9 @@ for subsession in [q1, q2, q3]:
                 run.font.bold = True
                 run.font.color.rgb = RGBColor(255, 255, 255)
                 counter +=1
-            #except:
-                #xml_slides = prs.slides._sldIdLst  
-                #slides = list(xml_slides)
-                #xml_slides.remove(slides[counter]) 
-                #print(f'{team} not in {subsession_name}')
+            except:
+                xml_slides = prs.slides._sldIdLst  
+                slides = list(xml_slides)
+                xml_slides.remove(slides[counter]) 
+                print(f'{team} not in {subsession_name}')
     prs.save(parent_file / report_folder / f'{race_number}_{subsession_name}_{race_session_name}.pptx')
