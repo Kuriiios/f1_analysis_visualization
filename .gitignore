@@ -2,6 +2,9 @@
 /data/
 /cache_folder/
 /reports/
+/csv/
+/figures/
+login.txt
 # Mac OS-specific storage files
 .DS_Store
 

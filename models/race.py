@@ -2,6 +2,10 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from datetime import timedelta
 
+from instagrapi import Client
+import subprocess
+from pdf2image import convert_from_path
+
 import fastf1
 import fastf1.plotting
 from fastf1.ergast import Ergast
@@ -21,6 +25,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_CONNECTOR
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.oxml.xmlchemy import OxmlElement
 
 ergast = Ergast()
@@ -38,6 +43,7 @@ fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
 year = int(input('Year ? '))
 race_number = int(input('Race Number ? (1-24) '))
 race_session = input('Session ? (R, S) ')
+post_option = input('Do you want to post it immediatly ? (Y/N) ')
 
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
@@ -46,17 +52,32 @@ if race_session == 'R':
     race_session_name = 'Race'
 elif race_session == 'S':
     race_session_name = 'Sprint'
-    
-figures_folder = parent_file / 'reports' / 'figures' / f'{race_number}_{session.event["EventName"]}_{session.event.year}/'
-report_folder = parent_file / 'reports' / f"{race_number}_{session.event["EventName"]}_{session.event.year}/"
+
+event_name = session.event.EventName   
+figures_folder = parent_file / 'figures' / f'{race_number}_{event_name}_{session.event.year}/'
+report_folder = parent_file / 'reports' / f"{race_number}_{event_name}_{session.event.year}/"
 
 figures_folder.mkdir(parents=True, exist_ok=True)
 report_folder.mkdir(parents=True, exist_ok=True)
 
 pit = ergast.get_pit_stops(season = year, round = race_number )
-event_name = session.event.EventName
 circuit_info = session.get_circuit_info()
 teams = fastf1.plotting.list_team_names(session)
+
+def session_type(race_session):
+    match race_session:
+        case 'R':
+            return 'Race'
+        case 'S':
+            return 'Sprint'
+
+def read_credentials(file= parent_file / "login.txt"):
+    creds = {}
+    with open(file) as f:
+        for line in f:
+            key, value = line.strip().split("=")
+            creds[key] = value
+    return creds
 
 def seconds_to_mmss(x, pos):
     minutes = int(x // 60)
@@ -561,16 +582,16 @@ for idx,team in enumerate(teams):
     fastest_driver_per_lap_dict.update({f'{team}':fastest_driver_per_lap_per_team})
     team_info = get_lap_repartition( fastest_driver_per_lap_per_team)
     race_info = create_csv_race_info(session, team, lap_info_per_team, drivers_info, team_info)
-os.chdir(parent_file / 'reports/csv')
+os.chdir(parent_file / 'csv')
 with open(csv_file_path, mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerows(race_info)
 
 keyword = f'{race_number}_{race_session}_race_info'
-for fname in os.listdir(parent_file / 'reports/csv'):
+for fname in os.listdir(parent_file / 'csv'):
     if keyword in fname:
         driver_data = fname
-os.chdir(parent_file / 'reports/csv')
+os.chdir(parent_file / 'csv')
 arr = pd.read_csv(driver_data)
 
 counter = 0
@@ -1029,7 +1050,7 @@ for idx, team in enumerate(teams):
             #DRIVER 1 VARIABLE
 
             txBox = slide.shapes.add_textbox(left=Pt(40), top=Pt(140), width=Pt(500), height=Pt(20))
-            txBox.text_frame.auto_size = False
+            txBox.text_frame.auto_size = MSO_AUTO_SIZE.NONE
             tf = txBox.text_frame
             p = tf.add_paragraph()
             p.alignment = PP_ALIGN.LEFT
@@ -1124,7 +1145,7 @@ for idx, team in enumerate(teams):
             
             #DRIVER 2 VARIABLE
             txBox = slide.shapes.add_textbox(left=Pt(745), top= Pt(140), width=Pt(300), height=Pt(20))
-            txBox.text_frame.auto_size = False
+            txBox.text_frame.auto_size = MSO_AUTO_SIZE.NONE
             tf = txBox.text_frame
             p = tf.add_paragraph()
             p.alignment = PP_ALIGN.RIGHT
@@ -1136,7 +1157,7 @@ for idx, team in enumerate(teams):
             run.font.color.rgb = RGBColor(255, 255, 255)
             
             txBox = slide.shapes.add_textbox(left=Pt(743), top= Pt(225), width=Pt(300), height=Pt(20))
-            txBox.text_frame.auto_size = False
+            txBox.text_frame.auto_size = MSO_AUTO_SIZE.NONE
             tf = txBox.text_frame
             p = tf.add_paragraph()
             p.alignment = PP_ALIGN.RIGHT
@@ -1224,3 +1245,54 @@ for idx, team in enumerate(teams):
             xml_slides.remove(slides[counter]) 
             print(f'{team} not in {race_session_name}')
     prs.save(report_folder / f'{race_number}_{race_session_name}.pptx')
+
+for file_path in report_folder.iterdir():
+    if file_path.is_file() and file_path.suffix.lower() == '.pptx':
+        os.chdir(report_folder)
+
+        subprocess.run(
+            [
+                "/usr/bin/lowriter",
+                "--headless",
+                "--convert-to",
+                "pdf",
+                str(file_path.resolve())
+            ],
+            check=True
+        )
+        no_suffix_path = file_path.with_suffix('')
+        no_suffix_path.mkdir(parents=True, exist_ok=True)
+        file_path_pdf = file_path.with_suffix('.pdf')
+        
+        os.chdir(no_suffix_path)
+        images = convert_from_path(file_path_pdf, dpi=72)
+
+        for i in range(len(images)):
+            images[i].save(file_path.stem+ str(i) +'.jpeg', 'JPEG')
+        file_path.unlink()
+        file_path_pdf.unlink()
+    
+
+caption =  ( f"🇦🇺 Round {session.event.RoundNumber} - {session.event.EventName} ({session.event.Country})\n"
+            f"📍 {session.event.Location}\n"
+            f"🏁 {session_type(race_session)} Session Recap\n"
+            f"———\n"
+            f"Stay tuned for full weekend coverage of the {session.event.OfficialEventName}!\n"
+            f"#F1 #Formula1 #F1{session.event.RoundNumber} #F1{session.event.Country.replace(' ', '')} #F1Weekend #F1Quali #F1Race #F1Team")
+
+if post_option == 'Y':
+    creds = read_credentials()
+    cl = Client()
+    cl.login(creds['username'], creds['password'])
+
+    image_folder = parent_file / f"reports/{session.event.RoundNumber}_{session.event.EventName}_{year}/{session.event.RoundNumber}_{session_type(race_session)}"
+    image_files = []
+
+    for report in os.listdir(image_folder):
+        image_files.append(os.path.join(image_folder, report))
+
+    # Post as a carousel
+    cl.album_upload(
+        paths=image_files,
+        caption=caption
+        )
