@@ -5,7 +5,7 @@
 This project provides an in-depth analysis of the 2025 Formula 1 season's qualifying sessions (Q1, Q2, and Q3). The primary focus is on comparing the performance of teammate drivers, identifying key differences in their driving across various track sections and telemetry data. By leveraging the `fastf1` library, this analysis generates insightful visualizations and data reports to highlight driver strengths and weaknesses during qualifying.
 
 ## Project Structure
-├── LICENSE
+├── LICENSE\n
 ├── Makefile
 ├── README.md
 ├── data
