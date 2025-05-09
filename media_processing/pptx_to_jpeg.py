@@ -28,6 +28,6 @@ for report_folder in reports_dir.iterdir():
                 images = convert_from_path(file_path_pdf)
                 
                 for i in range(len(images)):
-                    images[i].save(file_path.stem + str(i) +'.png', 'PNG')
+                    images[i].save(file_path.stem + str(i) +'.jpeg', 'JPEG')
                 file_path.unlink()
                 file_path_pdf.unlink()

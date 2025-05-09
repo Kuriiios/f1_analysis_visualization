@@ -1,32 +1,125 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
-name = "f1_analysis_ccds"
-version = "0.0.1"
-description = "This is my analysis of the 2025 F1 season"
+name = "f1_analysis_ccds" # Replace with your project name
+version = "0.1.0" # Start with a semantic version
+description = "Analysis of Formula 1 qualifying data." # Replace
 authors = [
-  { name = "Cyril Leconte" },
+  { name = "Your Name", email = "your.email@example.com" }, # Replace
 ]
-license = { file = "LICENSE" }
-readme = "README.md"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License"
+maintainers = [
+  { name = "Your Name", email = "your.email@example.com" }, # Replace if different
 ]
-requires-python = "~=3.10.0"
+readme = "README.md" #  Make sure this matches your readme file
+#license = { name = "MIT" } # Or specify another license, or a table: {file = "LICENSE.txt"}
+keywords = ["f1", "formula1", "analysis", "sports", "racing", "fastf1"] # Add relevant keywords
+#classifiers = [ # See https://pypi.org/classifiers/
+#    "Development Status :: 3 - Alpha",
+#    "Intended Audience :: Developers",
+#    "License :: OSI Approved :: MIT License",
+#    "Programming Language :: Python :: 3",
+#    "Programming Language :: Python :: 3.7",
+#    "Programming Language :: Python :: 3.8",
+#    "Programming Language :: Python :: 3.9",
+#    "Programming Language :: Python :: 3.10",
+#    "Topic :: Software Development :: Libraries",
+#    "Topic :: Scientific/Engineering :: Mathematics",
+#]
+requires-python = ">=3.8" # Minimum Python version
 
+dependencies = [
+    "matplotlib>=3.4", # Add your project dependencies
+    "pandas>=1.3",
+    "numpy>=1.21",
+    "fastf1>=3.0",
+    "pptx>=0.6.21", # python-pptx
+    "pdf2image>=1.16",
+    "chromato>=0.1.1",
+    "instagrapi>=1.19.0"
+]
 
-[tool.ruff]
-line-length = 99
-src = ["f1_analysis_ccds"]
-include = ["pyproject.toml", "f1_analysis_ccds/**/*.py"]
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "mypy>=0.940",
+    "flake8>=4.0",
+    "black>=22.3",
+    "tox>=3.24",
+]
 
-[tool.ruff.lint]
-extend-select = ["I"]  # Add import sorting
+[project.scripts]
+f1_analysis = "f1_analysis_ccds.main:main" # If you have a main entry point,  f1_analysis_ccds is the package name
 
-[tool.ruff.lint.isort]
-known-first-party = ["f1_analysis_ccds"]
-force-sort-within-sections = true
+# [project.gui-scripts] # For GUI applications
 
+[tool.setuptools]
+packages = ["f1_analysis_ccds"] #  Package(s) to include
+
+[tool.setuptools.package-dir]
+"" = "f1_analysis_ccds" # Maps the package to the directory
+
+[tool.setuptools.exclude-files]
+"tests*" = " " # Exclude tests
+
+# [tool.distutils.extensions."your_extension_name"] # For C extensions
+
+[tool.flit.module] #  If you use flit
+name = "f1_analysis_ccds"
+
+[tool.black] # Black configuration
+line-length = 120
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | build
+  | dist
+  | envs
+  | venv
+)/
+'''
+
+[tool.isort] # isort configuration
+profile = "black"
+src_paths = ["f1_analysis_ccds", "."]
+
+[tool.mypy] # Mypy configuration
+strict = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "fastf1"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pptx"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pdf2image"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "chromato"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "instagrapi"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options] # Pytest configuration
+addopts = [
+  "--doctest-modules",
+  "--cov=f1_analysis_ccds",
+  "--cov-report=term-missing",
+]
+testpaths = ["tests"]
+
+[build-system] # Build system configuration
+requires = ["setuptools>=64.0.0", "wheel"] #  or ["flit"] if you use flit
+build-backend = "setuptools.build_meta" # or "flit.api"

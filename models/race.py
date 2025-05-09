@@ -71,7 +71,7 @@ def session_type(race_session):
         case 'S':
             return 'Sprint'
 
-def read_credentials(file= parent_file / "login.txt"):
+def read_credentials(file = parent_file / "data/raw/login.txt"):
     creds = {}
     with open(file) as f:
         for line in f:
@@ -582,16 +582,16 @@ for idx,team in enumerate(teams):
     fastest_driver_per_lap_dict.update({f'{team}':fastest_driver_per_lap_per_team})
     team_info = get_lap_repartition( fastest_driver_per_lap_per_team)
     race_info = create_csv_race_info(session, team, lap_info_per_team, drivers_info, team_info)
-os.chdir(parent_file / 'csv')
+os.chdir(parent_file / 'data/processed/')
 with open(csv_file_path, mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerows(race_info)
 
 keyword = f'{race_number}_{race_session}_race_info'
-for fname in os.listdir(parent_file / 'csv'):
+for fname in os.listdir(parent_file / 'data/processed/'):
     if keyword in fname:
         driver_data = fname
-os.chdir(parent_file / 'csv')
+os.chdir(parent_file / 'data/processed/')
 arr = pd.read_csv(driver_data)
 
 counter = 0
