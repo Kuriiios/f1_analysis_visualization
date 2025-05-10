@@ -4,32 +4,6 @@
 
 This project provides an in-depth analysis of the 2025 Formula 1 season's qualifying sessions (Q1, Q2, and Q3). The primary focus is on comparing the performance of teammate drivers, identifying key differences in their driving across various track sections and telemetry data. By leveraging the `fastf1` library, this analysis generates insightful visualizations and data reports to highlight driver strengths and weaknesses during qualifying.
 
-## Project Structure
-├── LICENSE
-├── Makefile
-├── README.md
-├── data
-│   ├── external       <- Supporting data (e.g., team logos).
-│   ├── interim        <- Transformed intermediate data.
-│   ├── processed      <- Final datasets for analysis and visualization (e.g., drivers_info.csv, race_info.txt, etc).
-│   └── raw            <- Original, unprocessed data (e.g., second_color.csv, login.txt).
-├── docs               <- Project documentation.
-├── features           <- Functions for creating analysis-specific features (e.g., 'Turn', 'faster_driver').
-├── figures            <- Output visualizations (PNG files).
-├── media_processing   <- tools for handling different media formats for a specific purpose (PNG files).
-├── models             <- (Potentially for future predictive modeling, currently focused on descriptive analysis).
-│   └── qual.py
-│   └── race.py
-│   └── utils          <- Collection of function needed to execute models.
-├── notebooks          <- Jupyter notebooks for exploratory analysis.
-│   └── *.ipynb
-├── references         <- Data dictionaries, manuals, etc.
-├── reports            <- Generated analysis reports (JPEG).
-├── pyproject.toml     <- Project configuration.
-├── requirements.txt   <- Project dependencies.
-├── config.py          <- Project configuration variables.
-
-
 ## Qualifying Teammate Performance Analysis
 This project provides a detailed comparison of teammate performance during the 2025 Formula 1 season. The analysis is divided into two main parts: Qualifying and Race.
 
