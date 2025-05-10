@@ -34,7 +34,6 @@ from utils.qual.plots import *
 
 parent_file = Path(__file__).resolve().parent.parent
 
-
 plots_dir = os.path.join(parent_file, 'plots')
 if plots_dir not in sys.path:
     sys.path.append(plots_dir)
