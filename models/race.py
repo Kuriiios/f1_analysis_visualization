@@ -114,7 +114,7 @@ for idx,team in enumerate(teams):
     show_pace_comp(team, team_drivers, session, team_color, team_color_2, figures_folder)
     show_laptime_scatterplot(team, team_drivers, session, team_color, team_color_2, figures_folder)
     show_laptime_comp(team, team_drivers, session, team_color, team_color_2, figures_folder)
-    show_tyre_strategy(team, team_drivers, session, team_color, team_color_2, figures_folder)
+    show_tyre_strategy(team, team_drivers, session, figures_folder)
     
 
 laptime_scatterplot = {}
@@ -135,7 +135,7 @@ for idx,team in enumerate(teams):
     fastest_driver_per_lap_per_team = get_faster_driver_per_lap(session, team_drivers)
     fastest_driver_per_lap_dict.update({f'{team}':fastest_driver_per_lap_per_team})
     team_info = get_lap_repartition( fastest_driver_per_lap_per_team)
-    race_info = create_csv_race_info(session, team, lap_info_per_team, drivers_info, team_info)
+    race_info = create_csv_race_info(session, team, lap_info_per_team, drivers_info, team_info, event_name, race_session)
 os.chdir(parent_file / 'data/processed/')
 with open(csv_file_path, mode='w', newline='') as file:
     writer = csv.writer(file)
