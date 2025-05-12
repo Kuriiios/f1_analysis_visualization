@@ -47,16 +47,11 @@ fastf1.Cache.enable_cache(cache_folder)
 
 fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
                           color_scheme='fastf1')
-'''
+
 year = int(input('Year ? '))
 race_number = int(input('Race Number ? (1-24) '))
 race_session = input('Session ? (R, S) ')
 post_option = input('Do you want to post it immediatly ? (Y/N) ')
-'''
-year = 2025
-race_number = 6
-race_session = "S"
-post_option = 'N'
 
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
@@ -109,49 +104,16 @@ def Hex_RGB(ip):
 
 def to_str(var):
     return str(list(np.reshape(np.asarray(var), (1, np.size(var)))[0]))[1:-1]
-
-nat_as_integer = np.datetime64('NAT').view('i8')
-
-def isnat(your_datetime):
-    dtype_string = str(your_datetime.dtype)
-    if 'datetime64' in dtype_string or 'timedelta64' in dtype_string:
-        return your_datetime.view('i8') == nat_as_integer
-    return False  # it can't be a NaT if it's not a dateime
-
-def correct_fastest_lap(team, session):
-    team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
     
-    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
-    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
-    if not driver_1_laps.empty:
-        laptime_counter_driver_1 = 0
-        for lap in driver_1_laps['LapTime']:
-            try:
-                if 'NaT' in str(lap):
-                    driver_1_laps.loc[laptime_counter_driver_1, 'LapTime'] = driver_1_laps.loc[laptime_counter_driver_1 +1, 'LapStartTime'] - driver_1_laps.loc[laptime_counter_driver_1, 'LapStartTime']
-                laptime_counter_driver_1 +=1
-            except KeyError:
-                break
-
-    laptime_counter_driver_2 = 0
-    for lap in driver_2_laps['LapTime']:
-        try:
-            if 'NaT' in str(lap):
-                driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
-            laptime_counter_driver_2 +=1
-        except KeyError:
-            break
-    return driver_1_laps, driver_2_laps
-
 for idx,team in enumerate(teams):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
     team_color = fastf1.plotting.get_team_color(team, session=session)
     df_color=pd.read_csv(parent_file / "data/raw/second_color.csv", index_col='team')
     team_color_2 = df_color.iat[idx,0]
     
-    show_pace_comp(team, session, team_color, team_color_2, figures_folder)
+    show_pace_comp(team, team_drivers, session, team_color, team_color_2, figures_folder)
     show_laptime_scatterplot(team, team_drivers, session, team_color, team_color_2, figures_folder)
-    show_laptime_comp(team, session, team_color, team_color_2, figures_folder)
+    show_laptime_comp(team, team_drivers, session, team_color, team_color_2, figures_folder)
     show_tyre_strategy(team, team_drivers, session, figures_folder)
     
 
@@ -169,11 +131,11 @@ race_info = []
 fastest_driver_per_lap_dict = {}
 for idx,team in enumerate(teams):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-    drivers_info = get_drivers_info(session, team, team_drivers, race_session, year, race_number)
-    fastest_driver_per_lap_per_team = get_faster_driver_per_lap(session, team, team_drivers)
+    drivers_info = get_drivers_info(session, team_drivers, race_session, year, race_number)
+    fastest_driver_per_lap_per_team = get_faster_driver_per_lap(session, team_drivers)
     fastest_driver_per_lap_dict.update({f'{team}':fastest_driver_per_lap_per_team})
     team_info = get_lap_repartition( fastest_driver_per_lap_per_team)
-    race_info = create_csv_race_info(lap_info_per_team, drivers_info, team_info, event_name, race_session)
+    race_info = create_csv_race_info(session, team, lap_info_per_team, drivers_info, team_info, event_name, race_session)
 os.chdir(parent_file / 'data/processed/')
 with open(csv_file_path, mode='w', newline='') as file:
     writer = csv.writer(file)

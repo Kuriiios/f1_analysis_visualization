@@ -118,7 +118,7 @@ def create_csv_lap_info(quali_session, list, team, sub_session, event_name, race
 
                 try:
                     SpeedI1 = str(int(driver_lap['SpeedI1'])) + ' kp/h'
-                except AttributeError:
+                except ValueError:
                     SpeedI1 = 'No data'
 
                 if len(str(driver_lap['LapTime'])) == 15:
@@ -143,17 +143,14 @@ def create_csv_lap_info(quali_session, list, team, sub_session, event_name, race
             else:
                 #  Add "No data" if driver_lap is None
                 team_info.extend(['No data'] * 11)
-        if team_drivers[0] in  quali_session['Driver'].values and team_drivers[1] in  quali_session['Driver'].values:
-            try:
-                gap = round(float(team_info[2][3:]) - float(team_info[13][3:]), 3)
-                gap1 = round(float(team_info[13][3:]) - float(team_info[2][3:]), 3)
-            except ValueError:
-                gap = 'No data'
-                gap1 = 'No data'
-            gaps = [gap, gap1]
-            team_info.extend(gaps)
-        else:
-            team_info.extend(['No data','No data'])
+        try:
+            gap = round(float(team_info[2][3:]) - float(team_info[13][3:]), 3)
+            gap1 = round(float(team_info[13][3:]) - float(team_info[2][3:]), 3)
+        except ValueError:
+            gap = 'No data'
+            gap1 = 'No data'
+        gaps = [gap, gap1]
+        team_info.extend(gaps)
             
         v_speed = [str(v_min) + ' kp/h', str(v_max) + ' kp/h']
         team_info.extend(v_speed)

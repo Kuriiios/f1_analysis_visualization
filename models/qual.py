@@ -175,7 +175,7 @@ with open(csv_file_path_q2, mode='w', newline='') as file:
 with open(csv_file_path_q3, mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerows(driver_info_figma_q3)
-        
+
 df_delta_per_team = pd.DataFrame(delta_per_team)
 df_delta_per_team.to_csv(csv_file_path_delta_per_team, index=False)
         
@@ -225,7 +225,7 @@ for subsession in [q1, q2, q3]:
         team_color_2 = Hex_RGB(team_color_2)
         
         if team_drivers[0] in  subsession['Driver'].values and team_drivers[1] in  subsession['Driver'].values:
-            #try:
+            try:
                 race_name = arr[counter][0]
                 team_logo = parent_file / f'data/external/team_logos/{team}.png'
                 corner_domination = figures_folder / f'{subsession_name}_{team}_corner_domination.png'
@@ -972,11 +972,12 @@ for subsession in [q1, q2, q3]:
                 run.font.bold = True
                 run.font.color.rgb = RGBColor(255, 255, 255)
                 counter +=1
-            #except:
-                #xml_slides = prs.slides._sldIdLst  
-                #slides = list(xml_slides)
-                #xml_slides.remove(slides[counter]) 
-                #print(f'{team} not in {subsession_name}')
+            except:
+                xml_slides = prs.slides._sldIdLst  
+                slides = list(xml_slides)
+                xml_slides.remove(slides[counter]) 
+                print(f'{team} not in {subsession_name}')
+        
     prs.save(parent_file/ report_folder / f'{race_number}_{subsession_name}_{session_type(race_session)}.pptx')
 
 for file_path in report_folder.iterdir():
