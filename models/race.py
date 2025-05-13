@@ -47,16 +47,11 @@ fastf1.Cache.enable_cache(cache_folder)
 
 fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
                           color_scheme='fastf1')
-'''
+
 year = int(input('Year ? '))
 race_number = int(input('Race Number ? (1-24) '))
 race_session = input('Session ? (R, S) ')
 post_option = input('Do you want to post it immediatly ? (Y/N) ')
-'''
-year = 2025
-race_number = 6
-race_session = "S"
-post_option = 'N'
 
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
