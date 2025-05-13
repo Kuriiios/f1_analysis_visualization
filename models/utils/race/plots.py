@@ -6,6 +6,7 @@ import fastf1.plotting
 from datetime import timedelta
 import os
 import pandas as pd
+import numpy as np
 import sys
 
 def fixed_nat_all_laps(team, session):
@@ -71,9 +72,15 @@ def seconds_to_mmss(x, pos):
     Returns:
         str: Formatted time string (MM:SS.ms).
     """
-    minutes = int(x // 60)
-    seconds = x % 60
-    return f"{minutes}:{seconds:05.2f}"
+    try:
+        # x is a float in days → convert to timedelta
+        td = timedelta(days=x)
+        total_seconds = int(td.total_seconds())
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        return f"{minutes}:{seconds:02}"
+    except Exception as e:
+        return "0:00"
 
 def show_laptime_comp(team, session, team_color, team_color_2, figures_folder):
     """
@@ -95,7 +102,8 @@ def show_laptime_comp(team, session, team_color, team_color_2, figures_folder):
     ax.plot(driver_2_laps['LapNumber'], driver_2_laps['LapTime'], color=team_color_2)
     ax.tick_params(labelright=True)
     ax.set_xlim([0, last_lap])
-    
+    ax.yaxis.set_major_formatter(FuncFormatter(seconds_to_mmss))
+
     plt.tick_params(
     axis='x',
     which='both',
@@ -206,12 +214,6 @@ def show_pace_comp(team, session, team_color, team_color_2, figures_folder):
     """
     driver_1_laps, driver_2_laps = fixed_nat_fast_laps(team, session)
 
-    transformed_driver_1_laps = driver_1_laps.copy()
-    transformed_driver_2_laps = driver_2_laps.copy()
-    
-    transformed_driver_1_laps["LapTime"] = transformed_driver_1_laps["LapTime"].dt.total_seconds()
-    transformed_driver_2_laps["LapTime"] = transformed_driver_2_laps["LapTime"].dt.total_seconds()
-    
     if driver_1_laps.empty and driver_2_laps.empty:
         print("No valid lap times to display.")
         return
@@ -225,8 +227,8 @@ def show_pace_comp(team, session, team_color, team_color_2, figures_folder):
         min_laptime = min(min(driver_1_laps['LapTime']), min(driver_2_laps['LapTime']))
         max_laptime = max(max(driver_1_laps['LapTime']), max(driver_2_laps['LapTime']))
 
-    min_laptime = (min_laptime - timedelta(seconds= 1)).total_seconds()
-    max_laptime = (max_laptime + timedelta(seconds= 1)).total_seconds()
+    min_laptime = (min_laptime - timedelta(seconds= 1))
+    max_laptime = (max_laptime + timedelta(seconds= 1))
 
     plt.rcParams.update({
         'axes.spines.left': False,
@@ -237,9 +239,9 @@ def show_pace_comp(team, session, team_color, team_color_2, figures_folder):
     })
 
     fig, ax = plt.subplots(figsize=(2.5, 4.2))
-    if "LapTime" in transformed_driver_1_laps.columns and transformed_driver_1_laps["LapTime"].dropna().size > 0:
+    if "LapTime" in driver_1_laps.columns and driver_1_laps["LapTime"].dropna().size > 0:
         sns.boxplot(
-            data=transformed_driver_1_laps,
+            data=driver_1_laps,
             y="LapTime",
             color=team_color,
             linecolor='white',
@@ -253,7 +255,8 @@ def show_pace_comp(team, session, team_color, team_color_2, figures_folder):
     ax.invert_yaxis()
     ax.set(xlabel=None, ylabel=None)
     ax.tick_params(bottom=False)
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=9))
+    ax.tick_params(axis='y', which='both', left=True, labelleft=True)
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=8))
     ax.yaxis.set_major_formatter(FuncFormatter(seconds_to_mmss))
 
     plt.xticks(visible=False)
@@ -263,9 +266,9 @@ def show_pace_comp(team, session, team_color, team_color_2, figures_folder):
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(2.5, 4.2))
-    if "LapTime" in transformed_driver_2_laps.columns and transformed_driver_2_laps["LapTime"].dropna().size > 0:
+    if "LapTime" in driver_2_laps.columns and driver_2_laps["LapTime"].dropna().size > 0:
         sns.boxplot(
-            data=transformed_driver_2_laps,
+            data=driver_2_laps,
             y="LapTime",
             color=team_color_2,
             linecolor='white',
@@ -280,7 +283,7 @@ def show_pace_comp(team, session, team_color, team_color_2, figures_folder):
     ax.set(xlabel=None, ylabel=None)
     ax.yaxis.tick_right()
     ax.tick_params(bottom=False)
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=9))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=8))
     ax.yaxis.set_major_formatter(FuncFormatter(seconds_to_mmss))
 
     plt.xticks(visible=False)
