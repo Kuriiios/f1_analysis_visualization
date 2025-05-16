@@ -92,8 +92,8 @@ def create_csv_lap_info(quali_session, list, team, sub_session, event_name, race
     v_max = 0
     delta_by_team = delta_per_team.get(f'{sub_session}_{team}', [])  # Use .get() to avoid KeyError
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-    corner_advantage_driver_2 = str(len([float(delta_at_corner) for delta_at_corner in delta_by_team if float(delta_at_corner) >= 0])) + '/' + str(len(delta_by_team)) if delta_by_team else "0/0"
-    corner_advantage_driver_1 = str(len(delta_by_team) - len([float(delta_at_corner) for delta_at_corner in delta_by_team if float(delta_at_corner) >= 0])) + '/' + str(len(delta_by_team)) if delta_by_team else "0/0"
+    corner_advantage_driver_1 = str(len([float(delta_at_corner) for delta_at_corner in delta_by_team if float(delta_at_corner) >= 0])) + '/' + str(len(delta_by_team)) if delta_by_team else "0/0"
+    corner_advantage_driver_2 = str(len(delta_by_team) - len([float(delta_at_corner) for delta_at_corner in delta_by_team if float(delta_at_corner) >= 0])) + '/' + str(len(delta_by_team)) if delta_by_team else "0/0"
     corner_advantage_team = [corner_advantage_driver_1, corner_advantage_driver_2]
     
     team_info = [
