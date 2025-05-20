@@ -84,13 +84,13 @@ def get_pitstop_time(session, team_drivers, year, race_number):
         pit0_total_duration = str(pit0[0]['duration'].sum())[10:-3]+ ' s'
     except:
         pit0_number = '0'
-        pit0_total_duration = str(timedelta(0))
+        pit0_total_duration = '0:00.000 s'
     try:
         pit1_number = str(pit1[0]['stop'].iloc[-1])
         pit1_total_duration = str(pit1[0]['duration'].sum())[10:-3]+ ' s'
     except:
         pit1_number = '0'
-        pit1_total_duration = str(timedelta(0))
+        pit1_total_duration = '0:00.000 s'
         
     return pit0_number, pit0_total_duration, pit1_number, pit1_total_duration
 
@@ -265,9 +265,9 @@ def get_drivers_info(session, team, team_drivers, race_session, year, race_numbe
         q3, q1 = np.percentile(driver_1_laps_fast['LapTime'].dt.total_seconds(), [75 ,25])
         driver_1_iqr = str(round(q3 - q1, 3))+ ' s'
     except:
-        race_time_driver_1 = 0
-        driver_1_avg_lap= 0
-        driver_1_iqr= str('0')
+        race_time_driver_1 = '0:00.000'
+        driver_1_avg_lap= '0:00.000'
+        driver_1_iqr= '0.000 s'
         
     try:
         driver_2_laps_all['LapTime'] = driver_2_laps_all['LapTime'].replace(pd.NaT, timedelta(0))
@@ -277,9 +277,12 @@ def get_drivers_info(session, team, team_drivers, race_session, year, race_numbe
         driver_2_iqr = str(round(q3 - q1, 3))+ ' s'
 
     except:
-        race_time_driver_2 = 0
-        driver_2_avg_lap= 0
-        driver_2_iqr= str(0)
+        race_time_driver_2 = '0:00:00.000'
+        driver_2_avg_lap= '0:00.000'
+        driver_2_iqr= '0.000 s'
+
+    if round(q3 - q1, 3) == float(0):
+        driver_2_iqr= '0.000 s'
         
     drivers_info = [
         driver_1_name,
