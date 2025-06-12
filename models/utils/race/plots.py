@@ -12,8 +12,14 @@ import sys
 def fixed_nat_all_laps(team, session):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
     
-    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
-    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
+    try:
+        driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
+    except:
+        driver_1_laps = pd.DataFrame()
+    try:
+        driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
+    except:
+        driver_2_laps = pd.DataFrame()
     if not driver_1_laps.empty:
         laptime_counter_driver_1 = 0
         for lap in driver_1_laps['LapTime']:
@@ -24,22 +30,28 @@ def fixed_nat_all_laps(team, session):
             except KeyError:
                 break
 
-    laptime_counter_driver_2 = 0
-    for lap in driver_2_laps['LapTime']:
-        try:
-            if 'NaT' in str(lap):
-                driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
-            laptime_counter_driver_2 +=1
-        except KeyError:
-            break
+    if not driver_2_laps.empty:
+        laptime_counter_driver_2 = 0
+        for lap in driver_2_laps['LapTime']:
+            try:
+                if 'NaT' in str(lap):
+                    driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
+                laptime_counter_driver_2 +=1
+            except KeyError:
+                break
     return driver_1_laps, driver_2_laps
 
 
 def fixed_nat_fast_laps(team, session):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-    
-    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_quicklaps(1.17).reset_index()
-    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_quicklaps(1.17).reset_index()
+    try:
+        driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_quicklaps(1.17).reset_index()
+    except:
+        driver_1_laps = pd.DataFrame()
+    try:
+        driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_quicklaps(1.17).reset_index()
+    except:
+        driver_2_laps = pd.DataFrame()
     if not driver_1_laps.empty:
         laptime_counter_driver_1 = 0
         for lap in driver_1_laps['LapTime']:
@@ -50,14 +62,15 @@ def fixed_nat_fast_laps(team, session):
             except KeyError:
                 break
 
-    laptime_counter_driver_2 = 0
-    for lap in driver_2_laps['LapTime']:
-        try:
-            if 'NaT' in str(lap):
-                driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
-            laptime_counter_driver_2 +=1
-        except KeyError:
-            break
+    if not driver_2_laps.empty:
+        laptime_counter_driver_2 = 0
+        for lap in driver_2_laps['LapTime']:
+            try:
+                if 'NaT' in str(lap):
+                    driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
+                laptime_counter_driver_2 +=1
+            except KeyError:
+                break
     return driver_1_laps, driver_2_laps
 
 
@@ -97,9 +110,10 @@ def show_laptime_comp(team, session, team_color, team_color_2, figures_folder):
     last_lap = int(max(session.laps['LapNumber']))
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    
-    ax.plot(driver_1_laps['LapNumber'], driver_1_laps['LapTime'], color=team_color)
-    ax.plot(driver_2_laps['LapNumber'], driver_2_laps['LapTime'], color=team_color_2)
+    if not driver_1_laps.empty:
+        ax.plot(driver_1_laps['LapNumber'], driver_1_laps['LapTime'], color=team_color)
+    if not driver_2_laps.empty: 
+        ax.plot(driver_2_laps['LapNumber'], driver_2_laps['LapTime'], color=team_color_2)
     ax.tick_params(labelright=True)
     ax.set_xlim([0, last_lap])
     ax.yaxis.set_major_formatter(FuncFormatter(seconds_to_mmss))
@@ -166,25 +180,27 @@ def show_laptime_scatterplot(team, team_drivers, session, team_color, team_color
         driver_2_laps['LapTime'] = pd.Timestamp('NaT').to_pydatetime()
         driver_2_laps['Compound'] = 'UNKNOWN'
     '''
-    sns.scatterplot(data=driver_1_laps,
-                    x="LapNumber",
-                    y="LapTime",
-                    hue = 'Compound',
-                    palette=palette,
-                    edgecolor = team_color,
-                    style="Compound",
-                    s=50,
-                    linewidth=0.5)
+    if not driver_1_laps.empty:
+        sns.scatterplot(data=driver_1_laps,
+                        x="LapNumber",
+                        y="LapTime",
+                        hue = 'Compound',
+                        palette=palette,
+                        edgecolor = team_color,
+                        style="Compound",
+                        s=50,
+                        linewidth=0.5)
+    if not driver_2_laps.empty:
+        sns.scatterplot(data=driver_2_laps,
+                        x="LapNumber",
+                        y="LapTime",
+                        hue = 'Compound',
+                        palette=palette,
+                        edgecolor = team_color_2,
+                        style="Compound",
+                        s=50,
+                        linewidth=0.5)
 
-    sns.scatterplot(data=driver_2_laps,
-                    x="LapNumber",
-                    y="LapTime",
-                    hue = 'Compound',
-                    palette=palette,
-                    edgecolor = team_color_2,
-                    style="Compound",
-                    s=50,
-                    linewidth=0.5)
     ax.yaxis.set_major_locator(MaxNLocator(nbins=8))
     ax.invert_yaxis()
     ax.tick_params(labelleft=False)
