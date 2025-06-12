@@ -9,9 +9,14 @@ ergast = Ergast()
 
 def fixed_nat_all_laps(team, session):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-    
-    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
-    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
+    try:
+        driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
+    except:
+        driver_1_laps = pd.DataFrame()
+    try:
+        driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_laps(range(0, (int(max(session.laps['LapNumber'])) + 1))).reset_index()
+    except:
+        driver_2_laps = pd.DataFrame()
     if not driver_1_laps.empty:
         laptime_counter_driver_1 = 0
         for lap in driver_1_laps['LapTime']:
@@ -22,21 +27,27 @@ def fixed_nat_all_laps(team, session):
             except KeyError:
                 break
 
-    laptime_counter_driver_2 = 0
-    for lap in driver_2_laps['LapTime']:
-        try:
-            if 'NaT' in str(lap):
-                driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
-            laptime_counter_driver_2 +=1
-        except KeyError:
-            break
+    if not driver_2_laps.empty:
+        laptime_counter_driver_2 = 0
+        for lap in driver_2_laps['LapTime']:
+            try:
+                if 'NaT' in str(lap):
+                    driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
+                laptime_counter_driver_2 +=1
+            except KeyError:
+                break
     return driver_1_laps, driver_2_laps
 
 def fixed_nat_fast_laps(team, session):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-    
-    driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_quicklaps(1.17).reset_index()
-    driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_quicklaps(1.17).reset_index()
+    try:
+        driver_1_laps = session.laps.pick_drivers(team_drivers[0]).pick_quicklaps(1.17).reset_index()
+    except:
+        driver_1_laps = pd.DataFrame()
+    try:
+        driver_2_laps = session.laps.pick_drivers(team_drivers[1]).pick_quicklaps(1.17).reset_index()
+    except:
+        driver_2_laps = pd.DataFrame()
     if not driver_1_laps.empty:
         laptime_counter_driver_1 = 0
         for lap in driver_1_laps['LapTime']:
@@ -47,14 +58,15 @@ def fixed_nat_fast_laps(team, session):
             except KeyError:
                 break
 
-    laptime_counter_driver_2 = 0
-    for lap in driver_2_laps['LapTime']:
-        try:
-            if 'NaT' in str(lap):
-                driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
-            laptime_counter_driver_2 +=1
-        except KeyError:
-            break
+    if not driver_2_laps.empty:
+        laptime_counter_driver_2 = 0
+        for lap in driver_2_laps['LapTime']:
+            try:
+                if 'NaT' in str(lap):
+                    driver_2_laps.loc[laptime_counter_driver_2, 'LapTime'] = driver_2_laps.loc[laptime_counter_driver_2 +1, 'LapStartTime'] - driver_2_laps.loc[laptime_counter_driver_2, 'LapStartTime']
+                laptime_counter_driver_2 +=1
+            except KeyError:
+                break
     return driver_1_laps, driver_2_laps
 
 
@@ -72,13 +84,18 @@ def get_pitstop_time(session, team_drivers, year, race_number):
         tuple: A tuple containing pit stop numbers and total durations for both drivers.
                (driver_1_pit_number, driver_1_total_duration, driver_2_pit_number, driver_2_total_duration)
     """
-    driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session).split()[1].lower()
-    driver_2_name = fastf1.plotting.get_driver_name(team_drivers[1], session).split()[1].lower()
-    if driver_1_name == 'verstappen':
-        driver_1_name = 'max_verstappen'
-    pit0 = ergast.get_pit_stops(season = year, round = race_number, driver=driver_1_name).content
-    pit1 = ergast.get_pit_stops(season = year, round = race_number, driver=driver_2_name).content
-    
+    try:
+        driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session).split()[1].lower()
+        if driver_1_name == 'verstappen':
+            driver_1_name = 'max_verstappen'
+        pit0 = ergast.get_pit_stops(season = year, round = race_number, driver=driver_1_name).content
+    except:
+        driver_1_name = 'No Data'
+    try:
+        driver_2_name = fastf1.plotting.get_driver_name(team_drivers[1], session).split()[1].lower()
+        pit1 = ergast.get_pit_stops(season = year, round = race_number, driver=driver_2_name).content
+    except:
+        driver_2_name = 'No Data'
     try:
         pit0_number = str(pit0[0]['stop'].iloc[-1])
         pit0_total_duration = str(pit0[0]['duration'].sum())[10:-3]+ ' s'
@@ -180,34 +197,37 @@ def get_final_gap(session, team):
     Returns:
         tuple: A tuple containing the final time gap for each driver in the format "+/- X s" or "+/- X laps".
     """
-    driver_1_laps, driver_2_laps = fixed_nat_all_laps(team, session)
-    race_time_driver_1 = driver_1_laps['LapTime'].sum()
-    race_time_driver_2 = driver_2_laps['LapTime'].sum()
-    zero_time = timedelta(0)
-    if len(driver_1_laps) == len(driver_2_laps):
-        if race_time_driver_1 > race_time_driver_2:
-            gap = str(round((pd.to_timedelta(race_time_driver_1 - race_time_driver_2).total_seconds()), 3))
-            driver_1_gap = '+' + gap + ' s'
-            driver_2_gap = '-' + gap + ' s'
-        elif race_time_driver_1 < race_time_driver_2:
-            gap = str(round((pd.to_timedelta(zero_time - (race_time_driver_1 - race_time_driver_2)).total_seconds()), 3))
-            driver_1_gap = '-' + gap + ' s'
-            driver_2_gap = '+' + gap + ' s'
-            
-    elif len(driver_1_laps) > len(driver_2_laps):
-        gap = len(driver_1_laps) - len(driver_2_laps)
-        driver_1_gap = '-' + str(gap) + ' laps'
-        driver_2_gap = '+' + str(gap) + ' laps'
-    elif len(driver_1_laps) < len(driver_2_laps):
-        gap = len(driver_2_laps) - len(driver_1_laps)
-        driver_1_gap = '+' + str(gap) + ' laps'
-        driver_2_gap = '-' + str(gap) + ' laps'
-    
-    if driver_1_gap[1:4] == '00:':
-        driver_1_gap = driver_1_gap[0] + driver_1_gap[4:]
-    if driver_2_gap[1:4] == '00:':
-        driver_2_gap = driver_2_gap[0] + driver_2_gap[4:]
-      
+    try:
+        driver_1_laps, driver_2_laps = fixed_nat_all_laps(team, session)
+        race_time_driver_1 = driver_1_laps['LapTime'].sum()
+        race_time_driver_2 = driver_2_laps['LapTime'].sum()
+        zero_time = timedelta(0)
+        if len(driver_1_laps) == len(driver_2_laps):
+            if race_time_driver_1 > race_time_driver_2:
+                gap = str(round((pd.to_timedelta(race_time_driver_1 - race_time_driver_2).total_seconds()), 3))
+                driver_1_gap = '+' + gap + ' s'
+                driver_2_gap = '-' + gap + ' s'
+            elif race_time_driver_1 < race_time_driver_2:
+                gap = str(round((pd.to_timedelta(zero_time - (race_time_driver_1 - race_time_driver_2)).total_seconds()), 3))
+                driver_1_gap = '-' + gap + ' s'
+                driver_2_gap = '+' + gap + ' s'
+                
+        elif len(driver_1_laps) > len(driver_2_laps):
+            gap = len(driver_1_laps) - len(driver_2_laps)
+            driver_1_gap = '-' + str(gap) + ' laps'
+            driver_2_gap = '+' + str(gap) + ' laps'
+        elif len(driver_1_laps) < len(driver_2_laps):
+            gap = len(driver_2_laps) - len(driver_1_laps)
+            driver_1_gap = '+' + str(gap) + ' laps'
+            driver_2_gap = '-' + str(gap) + ' laps'
+        
+        if driver_1_gap[1:4] == '00:':
+            driver_1_gap = driver_1_gap[0] + driver_1_gap[4:]
+        if driver_2_gap[1:4] == '00:':
+            driver_2_gap = driver_2_gap[0] + driver_2_gap[4:]
+    except:
+        driver_1_gap = 'No Data'
+        driver_2_gap = 'No Data'
     return driver_1_gap, driver_2_gap
 
 def get_drivers_info(session, team, team_drivers, race_session, year, race_number):
@@ -224,9 +244,14 @@ def get_drivers_info(session, team, team_drivers, race_session, year, race_numbe
     """
     driver_1_laps_fast, driver_2_laps_fast = fixed_nat_fast_laps(team, session)
     driver_1_laps_all, driver_2_laps_all = fixed_nat_all_laps(team, session)
-
-    driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session)
-    driver_2_name = fastf1.plotting.get_driver_name(team_drivers[1], session)
+    try:
+        driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session)
+    except:
+        driver_1_name = 'No data'
+    try:
+        driver_2_name = fastf1.plotting.get_driver_name(team_drivers[1], session)
+    except:
+        driver_2_name = 'No data'
     if driver_1_name == 'Andrea Kimi Antonelli':
         driver_1_name = 'Kimi Antonelli'
     if driver_2_name == 'Andrea Kimi Antonelli':
