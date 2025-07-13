@@ -27,14 +27,14 @@ with st.sidebar:
     year = st.selectbox('Select a year', year_list, index=len(year_list)-1)
 
     race_list = list(range(1,25))
-    race_number = st.selectbox('Select a race', race_list)
+    race_number = st.selectbox('Select a race', race_list, index=10)
 
     #session_list = ['Practice 1', 'Practice 2', 'Practice 3', 'Sprint Qualifying', 'Sprint Race', 'Qualifying', 'Race']
     session_list = ['Race']
     race_session = st.selectbox('Select a session', session_list, index=len(session_list)-1)
 
     lap_list = list(range(1, 79))
-    Lap_Number = st.selectbox('Select a lap', lap_list)
+    Lap_Number = st.selectbox('Select a lap', lap_list, index=30)
 
     team_list = ['Red Bull Racing', 'Alpine', 'Mercedes', 'Aston Martin', 'Ferrari', 'Williams', 'Kick Sauber', 'Racing Bulls', 'Haas F1 Team', 'McLaren']
     team = st.selectbox('Select a lap', team_list, index=4)
@@ -43,7 +43,7 @@ def highlight(s, min_max):
     if min_max == 'min':
         is_min_max = s == s.min()
     if min_max == 'max':
-        is_min_max = s == s.min()
+        is_min_max = s == s.max()
 
     return ['color: green' if v else 'color: orange' for v in is_min_max]
 
@@ -90,6 +90,86 @@ def highlight_driver(s):
         else:
             drivers.append('color: grey')
     return drivers
+
+def color_df(s, color):
+    colors= []
+    for driver_name in s:
+        colors.append(f'color:{color}')
+    return colors
+
+def is_personal_best_min(s, column):
+    best_colors = []
+
+    min_values = {}
+    driver_ids = list(session.drivers)
+
+    for driver_id in driver_ids:
+        try:
+            min_values[driver_id] = session.laps.pick_drivers(driver_id).pick_laps(range(0, Lap_Number + 1))[column].min()
+        except Exception:
+            min_values[driver_id] = float('inf')
+
+    overall_min = float('inf')
+    try:
+        all_driver_laps = session.laps.pick_drivers(drivers_data_df.Driver).pick_laps(range(0, Lap_Number + 1))
+        if not all_driver_laps.empty:
+            overall_min = all_driver_laps[column].min()
+    except Exception:
+        overall_min = float('inf')
+
+    for column_value in s:
+        color = 'color:orange'
+        for driver in session.drivers:
+            if column_value == session.laps.pick_drivers(drivers_data_df.Driver).pick_laps(range(0, Lap_Number+1))[column].min():
+                color = 'color:purple'
+            if column_value == min_values.get(driver):
+                color = 'color:green'
+        try:
+            if column_value < overall_min:
+                color = 'color:purple'
+        except:
+            continue
+
+        best_colors.append(color)
+
+    return best_colors
+
+def is_personal_best_max(s, column):
+    best_colors = []
+
+    max_values = {}
+    driver_ids = list(session.drivers)
+
+    for driver_id in driver_ids:
+        try:
+            max_values[driver_id] = session.laps.pick_drivers(driver_id).pick_laps(range(0, Lap_Number + 1))[column].max()
+        except Exception:
+            max_values[driver_id] = float(0)
+
+    overall_max = float(0)
+    try:
+        all_driver_laps = session.laps.pick_drivers(drivers_data_df.Driver).pick_laps(range(0, Lap_Number + 1))
+        if not all_driver_laps.empty:
+            overall_max = all_driver_laps[column].max()
+    except Exception:
+        overall_max = float(0)
+    
+    for column_value in s:
+        color = 'color:orange'
+        for driver in session.drivers:
+            if column_value == session.laps.pick_drivers(drivers_data_df.Driver).pick_laps(range(0, Lap_Number+1))[column].max():
+                color = 'color:purple'
+            if column_value == max_values.get(driver):
+                color = 'color:green'
+        try:
+            if column_value > overall_max:
+                color = 'color:purple'
+        except:
+            continue
+
+        best_colors.append(color)
+
+    return best_colors
 
 def get_wind_direction_cat(WindDirection):
     normalized_direction = WindDirection % 360
@@ -140,22 +220,35 @@ team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=se
 event_name = session.event.EventName
 
 col_row_1 = st.columns((1.5, 1, 1), gap='small')
-col_row_2 = st.columns((1, 1, 2), gap='small')
-col_row_3 = st.columns((1, 1, 1, 1, 1), gap='small')
+col_row_2 = st.columns((2, 2, 1, 1, 1, 1, 1), gap='small')
+col_row_3 = st.columns((1), gap='small')
 
 with col_row_1[1]:
     driver_data_last_laps = []
-    for lap in range(Lap_Number-9,Lap_Number+1):
-        driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
-        driver = team_drivers[0]
-        driver_lap = session.laps.pick_drivers(driver)
-        try:
-            driver_color = fastf1.plotting.get_driver_color(driver_lap.Driver.iloc[lap], session)
-            driver_data = [driver_lap.Time.iloc[lap], driver_lap.LapNumber.iloc[lap], driver_lap.Sector1Time.iloc[lap], driver_lap.SpeedI1.iloc[lap], driver_lap.Sector2Time.iloc[lap], driver_lap.SpeedI2.iloc[lap], driver_lap.Sector3Time.iloc[lap], driver_lap.SpeedFL.iloc[lap], driver_lap.LapTime.iloc[lap], driver_lap.SpeedST.iloc[lap]]
-        except:
-            continue
-        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
-        driver_data_last_laps.append(driver_data_series)
+    if Lap_Number < 10:
+        for lap in range(min(0, Lap_Number-10), Lap_Number):
+            driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
+            driver = team_drivers[1]
+            driver_lap = session.laps.pick_drivers(driver)
+            try:
+                driver_color = fastf1.plotting.get_driver_color(driver_lap.Driver.iloc[lap], session)
+                driver_data = [driver_lap.Time.iloc[lap], driver_lap.LapNumber.iloc[lap], driver_lap.Sector1Time.iloc[lap], driver_lap.SpeedI1.iloc[lap], driver_lap.Sector2Time.iloc[lap], driver_lap.SpeedI2.iloc[lap], driver_lap.Sector3Time.iloc[lap], driver_lap.SpeedFL.iloc[lap], driver_lap.LapTime.iloc[lap], driver_lap.SpeedST.iloc[lap]]
+            except:
+                continue
+            driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+            driver_data_last_laps.append(driver_data_series)
+    else:
+        for lap in range(Lap_Number-10, Lap_Number):
+            driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
+            driver = team_drivers[1]
+            driver_lap = session.laps.pick_drivers(driver)
+            try:
+                driver_color = fastf1.plotting.get_driver_color(driver_lap.Driver.iloc[lap], session)
+                driver_data = [driver_lap.Time.iloc[lap], driver_lap.LapNumber.iloc[lap], driver_lap.Sector1Time.iloc[lap], driver_lap.SpeedI1.iloc[lap], driver_lap.Sector2Time.iloc[lap], driver_lap.SpeedI2.iloc[lap], driver_lap.Sector3Time.iloc[lap], driver_lap.SpeedFL.iloc[lap], driver_lap.LapTime.iloc[lap], driver_lap.SpeedST.iloc[lap]]
+            except:
+                continue
+            driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+            driver_data_last_laps.append(driver_data_series)
     driver_data_last_laps_df = pd.DataFrame(driver_data_last_laps)
     styled_df = driver_data_last_laps_df.style
 
@@ -187,17 +280,30 @@ with col_row_1[1]:
 
 with col_row_1[2]:
     driver_data_last_laps = []
-    for lap in range(Lap_Number-9,Lap_Number+1):
-        driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
-        driver = team_drivers[1]
-        driver_lap = session.laps.pick_drivers(driver)
-        try:
-            driver_color = fastf1.plotting.get_driver_color(driver_lap.Driver.iloc[lap], session)
-            driver_data = [driver_lap.Time.iloc[lap], driver_lap.LapNumber.iloc[lap], driver_lap.Sector1Time.iloc[lap], driver_lap.SpeedI1.iloc[lap], driver_lap.Sector2Time.iloc[lap], driver_lap.SpeedI2.iloc[lap], driver_lap.Sector3Time.iloc[lap], driver_lap.SpeedFL.iloc[lap], driver_lap.LapTime.iloc[lap], driver_lap.SpeedST.iloc[lap]]
-        except:
-            continue
-        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
-        driver_data_last_laps.append(driver_data_series)
+    if Lap_Number < 10:
+        for lap in range(min(0, Lap_Number-10), Lap_Number):
+            driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
+            driver = team_drivers[1]
+            driver_lap = session.laps.pick_drivers(driver)
+            try:
+                driver_color = fastf1.plotting.get_driver_color(driver_lap.Driver.iloc[lap], session)
+                driver_data = [driver_lap.Time.iloc[lap], driver_lap.LapNumber.iloc[lap], driver_lap.Sector1Time.iloc[lap], driver_lap.SpeedI1.iloc[lap], driver_lap.Sector2Time.iloc[lap], driver_lap.SpeedI2.iloc[lap], driver_lap.Sector3Time.iloc[lap], driver_lap.SpeedFL.iloc[lap], driver_lap.LapTime.iloc[lap], driver_lap.SpeedST.iloc[lap]]
+            except:
+                continue
+            driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+            driver_data_last_laps.append(driver_data_series)
+    else:
+        for lap in range(Lap_Number-10, Lap_Number):
+            driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
+            driver = team_drivers[1]
+            driver_lap = session.laps.pick_drivers(driver)
+            try:
+                driver_color = fastf1.plotting.get_driver_color(driver_lap.Driver.iloc[lap], session)
+                driver_data = [driver_lap.Time.iloc[lap], driver_lap.LapNumber.iloc[lap], driver_lap.Sector1Time.iloc[lap], driver_lap.SpeedI1.iloc[lap], driver_lap.Sector2Time.iloc[lap], driver_lap.SpeedI2.iloc[lap], driver_lap.Sector3Time.iloc[lap], driver_lap.SpeedFL.iloc[lap], driver_lap.LapTime.iloc[lap], driver_lap.SpeedST.iloc[lap]]
+            except:
+                continue
+            driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+            driver_data_last_laps.append(driver_data_series)
     driver_data_last_laps_df = pd.DataFrame(driver_data_last_laps)
     styled_df = driver_data_last_laps_df.style
     
@@ -232,6 +338,7 @@ with col_row_1[0]:
     drivers_data = []
     driver_data_cols = [
         'Position', '№_Driver', 'Driver_Color', 'Driver', 'Time',
+        'Gap_ahead_Driver', 'Gap_to_Leader',
         'Sector1', 'I1', 'Sector2', 'I2', 'Sector3',
         'FL', 'LapTime', 'ST', 'Lap', 'Compound', 'PitStop'
     ]
@@ -250,7 +357,7 @@ with col_row_1[0]:
             leader_color = fastf1.plotting.get_driver_color(leader_snapshot_lap_data.Driver, session)
             leader_data = [
                 leader_snapshot_lap_data.Position, leader_driver_number, leader_color, leader_snapshot_lap_data.Driver,
-                leader_snapshot_lap_data.Time, leader_snapshot_lap_data.Sector1Time, leader_snapshot_lap_data.SpeedI1,
+                leader_snapshot_lap_data.Time, 0, 0, leader_snapshot_lap_data.Sector1Time, leader_snapshot_lap_data.SpeedI1,
                 leader_snapshot_lap_data.Sector2Time, leader_snapshot_lap_data.SpeedI2, leader_snapshot_lap_data.Sector3Time,
                 leader_snapshot_lap_data.SpeedFL, leader_snapshot_lap_data.LapTime, leader_snapshot_lap_data.SpeedST,
                 leader_snapshot_lap_data.LapNumber, leader_snapshot_lap_data.Compound, (leader_snapshot_lap_data.Stint - 1)
@@ -288,7 +395,7 @@ with col_row_1[0]:
                 driver_color = fastf1.plotting.get_driver_color(selected_lap.Driver, session)
                 driver_data = [
                     selected_lap.Position, driver_num, driver_color, selected_lap.Driver,
-                    selected_lap.Time, selected_lap.Sector1Time, selected_lap.SpeedI1,
+                    selected_lap.Time, 0, 0, selected_lap.Sector1Time, selected_lap.SpeedI1,
                     selected_lap.Sector2Time, selected_lap.SpeedI2, selected_lap.Sector3Time,
                     selected_lap.SpeedFL, selected_lap.LapTime, selected_lap.SpeedST,
                     selected_lap.LapNumber, selected_lap.Compound, (selected_lap.Stint - 1)
@@ -308,19 +415,22 @@ with col_row_1[0]:
         drivers_data_df['Time_td'] = drivers_data_df['Time']
         drivers_data_df['Gap_ahead_Driver'] = drivers_data_df['Time_td'].diff()
         drivers_data_df['Gap_to_Leader'] = drivers_data_df['Time_td'] - drivers_data_df['Time_td'].iloc[0]
-        for col in ['Sector1', 'Sector2', 'Sector3', 'LapTime']:
-            if pd.api.types.is_timedelta64_dtype(drivers_data_df[col]):
-                drivers_data_df[col] = drivers_data_df[col].astype(str).str[13:-3]
-            elif isinstance(drivers_data_df[col].iloc[0], pd.Timedelta):
-                drivers_data_df[col] = drivers_data_df[col].astype(str).str[13:-3]
-            else:
-                drivers_data_df[col] = drivers_data_df[col].astype(str)
-
+    
         drivers_data_df = drivers_data_df.drop(columns=['Time_td', 'Driver_Color'])
         drivers_data_df = drivers_data_df[drivers_data_df['Position']>0]
 
         styled_df = drivers_data_df.style
         styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
+        styled_df = styled_df.apply(is_personal_best_min, subset=['Sector1'], column = 'Sector1Time')
+        styled_df = styled_df.apply(is_personal_best_min, subset=['Sector2'], column = 'Sector2Time')
+        styled_df = styled_df.apply(is_personal_best_min, subset=['Sector3'], column = 'Sector3Time')
+        styled_df = styled_df.apply(is_personal_best_min, subset=['LapTime'], column = 'LapTime')
+        styled_df = styled_df.apply(is_personal_best_max, subset=['I1'], column = 'SpeedI1')
+        styled_df = styled_df.apply(is_personal_best_max, subset=['I2'], column = 'SpeedI2')
+        styled_df = styled_df.apply(is_personal_best_max, subset=['FL'], column = 'SpeedFL')
+        styled_df = styled_df.apply(is_personal_best_max, subset=['ST'], column = 'SpeedST')
+        styled_df = styled_df.apply(color_df, subset=['Gap_ahead_Driver'], color ='orange')
+        styled_df = styled_df.apply(color_df, subset=['Gap_to_Leader'], color ='orange')
         styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
 
         formatters = {
@@ -337,7 +447,7 @@ with col_row_1[0]:
         'ST': lambda x: int(x) if pd.notnull(x) else 'No Data',
         'Lap': lambda x: int(x) if pd.notnull(x) else 'No Data',
         'PitStop': lambda x: int(x) if pd.notnull(x) else 'No Data',
-        'Gap_ahead_Driver': lambda x: str(x)[7:-3] if pd.notnull(x) else 'No Data',
+        'Gap_ahead_Driver': lambda x: str(abs(x))[7:-3] if pd.notnull(x) else 'No Data',
         'Gap_to_Leader': lambda x: str(x)[7:-3] if pd.notnull(x) else 'No Data',
         }
 
@@ -363,10 +473,167 @@ with col_row_2[1]:
     messages = fastf1.api.race_control_messages(session.api_path)
     messages_df = pd.DataFrame.from_dict(messages)
     messages_df= messages_df.drop(columns=['Category', 'Status', 'Scope', 'Sector', 'RacingNumber'])
+    messages_df = messages_df[messages_df['Lap'] <=Lap_Number]
     st.dataframe(messages_df, 
                      hide_index=True)
 
 with col_row_2[2]:
+    driver_data_last_laps_df=pd.DataFrame()
+    driver_data_best_laps = []
+    driver_data_cols = ['Driver', 'Sector1', 'Gap', 'Compound']
+    for driver in session.drivers:
+        try:
+            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
+            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.Sector1Time), 0, driver_lap.Compound.iloc[Lap_Number]]
+        except:
+            continue
+        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+        driver_data_best_laps.append(driver_data_series)
+    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
+    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('Sector1')
+    driver_data_best_laps_df['Gap'] = ((driver_data_best_laps_df['Sector1'] - driver_data_best_laps_df['Sector1'].iloc[0])/driver_data_best_laps_df['Sector1'].iloc[0])*100
+    styled_df = driver_data_best_laps_df.style
+    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
+    styled_df = styled_df.apply(color_df, subset=['Sector1'], color ='orange')
+    styled_df = styled_df.apply(color_df, subset=['Gap'], color ='orange')
+    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
+
+    formatters = {
+        'Sector1': lambda x: str(x)[13:-3] if pd.notnull(x) else 'No Data',
+        'Gap': lambda x: str(round(x,1))+'%' if pd.notnull(x) else 'No Data',
+    }
+
+    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
+    styled_df = styled_df.format(final_formatters)
+    st.dataframe(styled_df, 
+                     hide_index=True)
+    
+with col_row_2[3]:
+    driver_data_last_laps_df=pd.DataFrame()
+    driver_data_best_laps = []
+    driver_data_cols = ['Driver', 'Sector2', 'Gap', 'Compound']
+    for driver in session.drivers:
+        try:
+            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
+            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.Sector2Time), 0, driver_lap.Compound.iloc[Lap_Number]]
+        except:
+            continue
+        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+        driver_data_best_laps.append(driver_data_series)
+    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
+    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('Sector2')
+    driver_data_best_laps_df['Gap'] = ((driver_data_best_laps_df['Sector2'] - driver_data_best_laps_df['Sector2'].iloc[0])/driver_data_best_laps_df['Sector2'].iloc[0])*100
+    styled_df = driver_data_best_laps_df.style
+    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
+    styled_df = styled_df.apply(color_df, subset=['Sector2'], color ='orange')
+    styled_df = styled_df.apply(color_df, subset=['Gap'], color ='orange')
+    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
+
+    formatters = {
+        'Sector2': lambda x: str(x)[13:-3] if pd.notnull(x) else 'No Data',
+        'Gap': lambda x: str(round(x,1))+'%' if pd.notnull(x) else 'No Data',
+    }
+
+    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
+    styled_df = styled_df.format(final_formatters)
+    st.dataframe(styled_df, 
+                     hide_index=True)
+    
+with col_row_2[4]:
+    driver_data_last_laps_df=pd.DataFrame()
+    driver_data_best_laps = []
+    driver_data_cols = ['Driver', 'Sector3', 'Gap', 'Compound']
+    for driver in session.drivers:
+        try:
+            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
+            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.Sector3Time), 0, driver_lap.Compound.iloc[Lap_Number]]
+        except:
+            continue
+        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+        driver_data_best_laps.append(driver_data_series)
+    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
+    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('Sector3')
+    driver_data_best_laps_df['Gap'] = ((driver_data_best_laps_df['Sector3'] - driver_data_best_laps_df['Sector3'].iloc[0])/driver_data_best_laps_df['Sector3'].iloc[0])*100
+    styled_df = driver_data_best_laps_df.style
+    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
+    styled_df = styled_df.apply(color_df, subset=['Sector3'], color ='orange')
+    styled_df = styled_df.apply(color_df, subset=['Gap'], color ='orange')
+    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
+
+    formatters = {
+        'Sector3': lambda x: str(x)[13:-3] if pd.notnull(x) else 'No Data',
+        'Gap': lambda x: str(round(x,1))+'%' if pd.notnull(x) else 'No Data',
+    }
+
+    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
+    styled_df = styled_df.format(final_formatters)
+    st.dataframe(styled_df, 
+                     hide_index=True)
+
+with col_row_2[5]:
+    driver_data_last_laps_df=pd.DataFrame()
+    driver_data_best_laps = []
+    driver_data_cols = ['Driver', 'LapTime', 'Gap', 'Compound']
+    for driver in session.drivers:
+        try:
+            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
+            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.LapTime), 0, driver_lap.Compound.iloc[Lap_Number]]
+        except:
+            continue
+        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+        driver_data_best_laps.append(driver_data_series)
+    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
+    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('LapTime')
+    driver_data_best_laps_df['Gap'] = ((driver_data_best_laps_df['LapTime'] - driver_data_best_laps_df['LapTime'].iloc[0])/driver_data_best_laps_df['LapTime'].iloc[0])*100
+    styled_df = driver_data_best_laps_df.style
+    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
+    styled_df = styled_df.apply(color_df, subset=['LapTime'], color ='orange')
+    styled_df = styled_df.apply(color_df, subset=['Gap'], color ='orange')
+    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
+
+    formatters = {
+        'LapTime': lambda x: str(x)[11:-3] if pd.notnull(x) else 'No Data',
+        'Gap': lambda x: str(round(x,1))+'%' if pd.notnull(x) else 'No Data',
+    }
+
+    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
+    styled_df = styled_df.format(final_formatters)
+    st.dataframe(styled_df, 
+                     hide_index=True)
+
+with col_row_2[6]:
+    driver_data_last_laps_df=pd.DataFrame()
+    driver_data_best_laps = []
+    driver_data_cols = ['Driver', 'TheoraticalBest', 'Gap', 'Compound']
+    for driver in session.drivers:
+        try:
+            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
+            driver_data = [driver_lap.Driver.iloc[Lap_Number], (np.min(driver_lap.Sector1Time) + np.min(driver_lap.Sector2Time) + np.min(driver_lap.Sector3Time)), 0, driver_lap.Compound.iloc[Lap_Number]]
+        except:
+            continue
+        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
+        driver_data_best_laps.append(driver_data_series)
+    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
+    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('TheoraticalBest')
+    driver_data_best_laps_df['Gap'] = ((driver_data_best_laps_df['TheoraticalBest'] - driver_data_best_laps_df['TheoraticalBest'].iloc[0])/driver_data_best_laps_df['TheoraticalBest'].iloc[0])*100
+    styled_df = driver_data_best_laps_df.style
+    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
+    styled_df = styled_df.apply(color_df, subset=['TheoraticalBest'], color ='orange')
+    styled_df = styled_df.apply(color_df, subset=['Gap'], color ='orange')
+    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
+
+    formatters = {
+        'TheoraticalBest': lambda x: str(x)[11:-3] if pd.notnull(x) else 'No Data',
+        'Gap': lambda x: str(round(x,1))+'%' if pd.notnull(x) else 'No Data',
+    }
+
+    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
+    styled_df = styled_df.format(final_formatters)
+    st.dataframe(styled_df, 
+                     hide_index=True)
+
+
+with col_row_3[0]:
     driver_data_all_laps = []
     lap_range = range(lap-10,lap+1)
     for lap in lap_range:
@@ -386,138 +653,4 @@ with col_row_2[2]:
     driver_data_all_laps_df['index'] = list(lap_range)
     driver_data_all_laps_df = driver_data_all_laps_df.set_index('index')
     st.dataframe(driver_data_all_laps_df, 
-                     hide_index=True)
-
-with col_row_3[0]:
-    driver_data_last_laps_df=pd.DataFrame()
-    driver_data_best_laps = []
-    driver_data_cols = ['Driver', 'Sector1', 'Compound']
-    for driver in session.drivers:
-        try:
-            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
-            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.Sector1Time), driver_lap.Compound.iloc[Lap_Number]]
-        except:
-            continue
-        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
-        driver_data_best_laps.append(driver_data_series)
-    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
-    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('Sector1')
-    styled_df = driver_data_best_laps_df.style
-    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
-
-    formatters = {
-        'Sector1': lambda x: str(x)[13:-3] if pd.notnull(x) else 'No Data',
-    }
-
-    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
-    styled_df = styled_df.format(final_formatters)
-    st.dataframe(styled_df, 
-                     hide_index=True)
-    
-with col_row_3[1]:
-    driver_data_last_laps_df=pd.DataFrame()
-    driver_data_best_laps = []
-    driver_data_cols = ['Driver', 'Sector2', 'Compound']
-    for driver in session.drivers:
-        try:
-            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
-            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.Sector2Time), driver_lap.Compound.iloc[Lap_Number]]
-        except:
-            continue
-        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
-        driver_data_best_laps.append(driver_data_series)
-    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
-    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('Sector2')
-    styled_df = driver_data_best_laps_df.style
-    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
-    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
-
-    formatters = {
-        'Sector2': lambda x: str(x)[13:-3] if pd.notnull(x) else 'No Data',
-    }
-
-    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
-    styled_df = styled_df.format(final_formatters)
-    st.dataframe(styled_df, 
-                     hide_index=True)
-    
-with col_row_3[2]:
-    driver_data_last_laps_df=pd.DataFrame()
-    driver_data_best_laps = []
-    driver_data_cols = ['Driver', 'Sector3', 'Compound']
-    for driver in session.drivers:
-        try:
-            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
-            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.Sector3Time), driver_lap.Compound.iloc[Lap_Number]]
-        except:
-            continue
-        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
-        driver_data_best_laps.append(driver_data_series)
-    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
-    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('Sector3')
-    styled_df = driver_data_best_laps_df.style
-    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
-    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
-
-    formatters = {
-        'Sector3': lambda x: str(x)[13:-3] if pd.notnull(x) else 'No Data',
-    }
-
-    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
-    styled_df = styled_df.format(final_formatters)
-    st.dataframe(styled_df, 
-                     hide_index=True)
-
-with col_row_3[3]:
-    driver_data_last_laps_df=pd.DataFrame()
-    driver_data_best_laps = []
-    driver_data_cols = ['Driver', 'LapTime', 'Compound']
-    for driver in session.drivers:
-        try:
-            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
-            driver_data = [driver_lap.Driver.iloc[Lap_Number], np.min(driver_lap.LapTime), driver_lap.Compound.iloc[Lap_Number]]
-        except:
-            continue
-        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
-        driver_data_best_laps.append(driver_data_series)
-    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
-    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('LapTime')
-    styled_df = driver_data_best_laps_df.style
-    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
-    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
-
-    formatters = {
-        'LapTime': lambda x: str(x)[11:-3] if pd.notnull(x) else 'No Data',
-    }
-
-    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
-    styled_df = styled_df.format(final_formatters)
-    st.dataframe(styled_df, 
-                     hide_index=True)
-
-with col_row_3[4]:
-    driver_data_last_laps_df=pd.DataFrame()
-    driver_data_best_laps = []
-    driver_data_cols = ['Driver', 'TheoraticalBest', 'Compound']
-    for driver in session.drivers:
-        try:
-            driver_lap = session.laps.pick_drivers(driver).pick_laps(range(1, 53))
-            driver_data = [driver_lap.Driver.iloc[Lap_Number], (np.min(driver_lap.Sector1Time) + np.min(driver_lap.Sector2Time) + np.min(driver_lap.Sector3Time)), driver_lap.Compound.iloc[Lap_Number]]
-        except:
-            continue
-        driver_data_series = pd.Series(driver_data, index=driver_data_cols)
-        driver_data_best_laps.append(driver_data_series)
-    driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
-    driver_data_best_laps_df = driver_data_best_laps_df.sort_values('TheoraticalBest')
-    styled_df = driver_data_best_laps_df.style
-    styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
-    styled_df = styled_df.apply(highlight_compound, subset=['Compound'])
-
-    formatters = {
-        'TheoraticalBest': lambda x: str(x)[11:-3] if pd.notnull(x) else 'No Data',
-    }
-
-    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_best_laps_df.columns}
-    styled_df = styled_df.format(final_formatters)
-    st.dataframe(styled_df, 
                      hide_index=True)
