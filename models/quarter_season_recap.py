@@ -82,13 +82,13 @@ for race_number in race_years:
                 num_rows = len(arr)
 
                 temp_recap = {}
-
+                print(arr)
                 for i in range(num_rows):
+                    
                     name_driver_1 = arr['driver_1_name'][i]
                     name_driver_2 = arr['driver_2_name'][i]
 
                     name = f'{name_driver_1}_{name_driver_2}'
-
                     iqr_driver_1 = float(arr['iqr_driver_1'][i][:-2])
                     iqr_driver_2 = float(arr['iqr_driver_2'][i][:-2])
 
