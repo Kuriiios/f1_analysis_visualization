@@ -47,7 +47,7 @@ with st.sidebar:
     
     if race_session == 'Race' or race_session == 'Sprint':
         lap_list = list(range(1, max_lap))
-        Lap_Number = st.selectbox('Select a lap', lap_list, index=10)
+        Lap_Number = st.selectbox('Select a lap', lap_list, index=len(lap_list)-1)
     elif race_session == 'Qualifying' or race_session == 'Sprint Qualifying':
         q1, q2, q3 = session.laps.split_qualifying_sessions()
         is_nat = np.isnat(q1['LapTime'])
@@ -712,13 +712,13 @@ with col_row_2[1]:
     st.dataframe(style_df, hide_index=True)
 
 with col_row_2[2]:
-    driver_data_last_laps_df=pd.DataFrame()
     driver_data_best_laps = []
     driver_data_cols = ['Driver', 'Sector1', 'Gap', 'Tyre']
     for driver in session.drivers:
         driver_lap = session.laps.pick_drivers(driver).pick_laps(range(0, Lap_Number+1))
         try:
-            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.Sector1Time), 0, driver_lap.Compound.iloc[Lap_Number-1]]
+            index_fastest = driver_lap.Sector1Time[driver_lap.Sector1Time == np.min(driver_lap.Sector1Time)].index
+            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.Sector1Time), 0, driver_lap.Compound.loc[index_fastest[0]]]
         except:
             continue
         driver_data_series = pd.Series(driver_data, index=driver_data_cols)
@@ -749,7 +749,8 @@ with col_row_2[3]:
     for driver in session.drivers:
         driver_lap = session.laps.pick_drivers(driver).pick_laps(range(0, Lap_Number+1))
         try:
-            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.Sector2Time), 0, driver_lap.Compound.iloc[Lap_Number-1]]
+            index_fastest = driver_lap.Sector2Time[driver_lap.Sector2Time == np.min(driver_lap.Sector2Time)].index
+            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.Sector2Time), 0, driver_lap.Compound.loc[index_fastest[0]]]
         except:
             continue
         driver_data_series = pd.Series(driver_data, index=driver_data_cols)
@@ -780,7 +781,8 @@ with col_row_2[4]:
     for driver in session.drivers:
         driver_lap = session.laps.pick_drivers(driver).pick_laps(range(0, Lap_Number+1))
         try:
-            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.Sector3Time), 0, driver_lap.Compound.iloc[Lap_Number-1]]
+            index_fastest = driver_lap.Sector3Time[driver_lap.Sector3Time == np.min(driver_lap.Sector3Time)].index
+            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.Sector3Time), 0, driver_lap.Compound.loc[index_fastest[0]]]
         except:
             continue
         driver_data_series = pd.Series(driver_data, index=driver_data_cols)
@@ -811,7 +813,8 @@ with col_row_2[5]:
     for driver in session.drivers:
         driver_lap = session.laps.pick_drivers(driver).pick_laps(range(0, Lap_Number+1))
         try:
-            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.LapTime), 0, driver_lap.Compound.iloc[Lap_Number-1]]
+            index_fastest = driver_lap.LapTime[driver_lap.LapTime == np.min(driver_lap.LapTime)].index
+            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], np.min(driver_lap.LapTime), 0, driver_lap.Compound.loc[index_fastest[0]]]
         except:
             continue
         driver_data_series = pd.Series(driver_data, index=driver_data_cols)
@@ -838,18 +841,17 @@ with col_row_2[5]:
 with col_row_2[6]:
     driver_data_last_laps_df=pd.DataFrame()
     driver_data_best_laps = []
-    driver_data_cols = ['Driver', 'TheoraticalBest', 'Gap', 'Tyre']
+    driver_data_cols = ['Driver', 'TheoraticalBest', 'Gap']
     for driver in session.drivers:
         driver_lap = session.laps.pick_drivers(driver).pick_laps(range(0, Lap_Number+1))
         try:
-            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], (np.min(driver_lap.Sector1Time) + np.min(driver_lap.Sector2Time) + np.min(driver_lap.Sector3Time)), 0, driver_lap.Compound.iloc[Lap_Number-1]]
+            driver_data = [driver_lap.Driver.iloc[0] + ' ❚ ' + driver_lap.DriverNumber.iloc[0], (np.min(driver_lap.Sector1Time) + np.min(driver_lap.Sector2Time) + np.min(driver_lap.Sector3Time)), 0]
         except:
             continue
         driver_data_series = pd.Series(driver_data, index=driver_data_cols)
         driver_data_best_laps.append(driver_data_series)
     driver_data_best_laps_df = pd.DataFrame(driver_data_best_laps)
     driver_data_best_laps_df = driver_data_best_laps_df.sort_values('TheoraticalBest')
-    driver_data_best_laps_df['Tyre'] = driver_data_best_laps_df.Tyre.replace(to_replace=tyres)
     driver_data_best_laps_df['Gap'] = ((driver_data_best_laps_df['TheoraticalBest'] - driver_data_best_laps_df['TheoraticalBest'].iloc[0])/driver_data_best_laps_df['TheoraticalBest'].iloc[0])*100
     styled_df = driver_data_best_laps_df.style
     styled_df = styled_df.apply(highlight_driver, subset=['Driver'])
