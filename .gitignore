@@ -8,7 +8,7 @@ login.txt
 f1_analysis_env
 # Mac OS-specific storage files
 .DS_Store
-
+.cache/
 # vim
 *.swp
 *.swo
