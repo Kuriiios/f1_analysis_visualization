@@ -3,6 +3,7 @@ import fastf1.api
 import fastf1.plotting
 from fastf1.ergast import Ergast
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from datetime import timedelta
@@ -11,6 +12,17 @@ import seaborn as sns
 import streamlit as st
 import altair as alt 
 import plotly.express
+
+import requests
+from bs4 import BeautifulSoup
+import json
+import codecs
+import pandas as pd
+
+from pathlib import Path
+parent_file = Path(__file__).resolve().parent.parent
+save_folder_transcription = '/data_dashboard/'
+save_path = str(parent_file) + save_folder_transcription
 
 st.set_page_config(
     page_title='F1 Analysis',
@@ -27,7 +39,7 @@ with st.sidebar:
     year = st.selectbox('Select a year', year_list, index=len(year_list)-1)
 
     race_list = list(range(1,25))
-    race_number = st.selectbox('Select a race', race_list, index=10)
+    race_number = st.selectbox('Select a race', race_list, index=12)
 
     race_session = 'Race'
     session= fastf1.get_session(year, race_number, race_session)
@@ -80,29 +92,45 @@ def highlight(s, min_max):
 
     return ['color: green' if v else 'color: orange' for v in is_min_max]
 
+def rotate(xy, *, angle):
+    rot_mat = np.array([[np.cos(angle), np.sin(angle)],
+                        [-np.sin(angle), np.cos(angle)]])
+    return np.matmul(xy, rot_mat)
+
 def background_color_df(s):
     colors= []
     for time_and_compound in s:
-        if ' SOFT' in time_and_compound:
+        if 'SOFT' in time_and_compound:
             colors.append('background-color:red')
-        if ' MEDIUM' in time_and_compound:
+        elif 'MEDIUM' in time_and_compound:
             colors.append('background-color:yellow')
-        if ' HARD' in time_and_compound:
+        elif 'HARD' in time_and_compound:
             colors.append('background-color:white')
-        if ' INTERMEDIATE' in time_and_compound:
+        elif 'INTERMEDIATE' in time_and_compound:
             colors.append('background-color:green')
-        if ' WET' in time_and_compound:
+        elif 'WET' in time_and_compound:
             colors.append('background-color:blue')
-        if ' SUPERSOFT' in time_and_compound:
+        elif ' SUPERSOFT' in time_and_compound:
             colors.append('background-color:purple')
-        if ' ULTRASOFT' in time_and_compound:
+        elif ' ULTRASOFT' in time_and_compound:
             colors.append('background-color:orangered')
-        if ' HYPERSOFT' in time_and_compound:
+        elif ' HYPERSOFT' in time_and_compound:
             colors.append('background-color:pink')
-        if ' SUPERHARD' in time_and_compound:
+        elif ' SUPERHARD' in time_and_compound:
             colors.append('background-color:orange')
-        if 'No data' in time_and_compound:
+        else:
             colors.append('background-color:grey')
+    return colors
+
+def fastest_per_driver(s, driver_fastest_lap):
+    colors = []
+    for time in s:
+        if time.split(' ')[0] == overall_fastest:
+            colors.append('color:purple')
+        elif time.split(' ')[0] == driver_fastest_lap:
+            colors.append('color:darkgreen')
+        else:
+            colors.append('color:black')
     return colors
 
 def highlight_driver(s):
@@ -251,11 +279,35 @@ teams = fastf1.plotting.list_team_names(session)
 team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
 event_name = session.event.EventName
 
-col_row_1 = st.columns((1.5, 1, 1), gap='small')
-col_row_2 = st.columns((2, 2, 1, 1, 1, 1, 1), gap='small')
-col_row_3 = st.columns((1), gap='small')
+col_row_1 = st.columns((3, 0.5, 2, 2), gap='small')
+col_row_2 = st.columns((1.6, 1.6 , 4), gap='small')
+col_row_3 = st.columns((1.5, 1, 1, 1 ,1 , 1.2), gap='small', vertical_alignment='center')
 
 with col_row_1[1]:
+    on_track = []
+    on_track_df = []
+    on_track_logo = []
+    driver_names = []
+    each_lap = session.laps.pick_laps(range(0, Lap_Number))
+    first_driver_session_time_in_microsec = int(str((each_lap.LapStartTime[each_lap.Position == 1 & (each_lap.LapNumber == max(each_lap.LapNumber))].values/1000)[0]).split(' ')[0])
+
+    for driver in session.drivers:
+
+        each_lap = session.laps.pick_laps(range(0, Lap_Number)).pick_drivers(driver)
+        each_lap = each_lap[each_lap.Position == each_lap.Position]
+        try:
+            each_lap_data = each_lap.get_pos_data()
+            on_track.append('On Track')
+            on_track_logo.append('🟢')
+        except:
+            on_track.append('DNF')
+            on_track_logo.append('🔴')
+    on_track_df = pd.DataFrame({
+        'Status':on_track,
+        'PU':on_track_logo}, index = session.drivers)
+    st.dataframe(on_track_df) 
+
+with col_row_1[2]:
     driver_data_last_laps = []
     driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
     driver = team_drivers[1]
@@ -305,7 +357,7 @@ with col_row_1[1]:
     styled_df = styled_df.format(final_formatters)
     st.dataframe(styled_df, hide_index=True)
 
-with col_row_1[2]:
+with col_row_1[3]:
     driver_data_last_laps = []
 
     driver_data_cols = ['Time', 'Lap', 'Sector1', 'I1', 'Sector2', 'I2', 'Sector3', 'FL', 'LapTime', 'ST']
@@ -662,6 +714,10 @@ with col_row_1[0]:
     st.dataframe(styled_df)
 
 with col_row_2[0]:
+    new_df = pd.read_csv(filepath_or_buffer = (str(save_path) + str(session.event.Session5Date)[:10]+'_'+str(session.event.EventName).replace(' ','_')+'.csv'), index_col=0)
+    st.dataframe(new_df)
+
+with col_row_2[1]:
     first_driver_first_lap = session.laps.pick_drivers(session.drivers).pick_laps(1)
     first_driver = session.laps.pick_drivers(session.drivers).pick_laps(Lap_Number)
     first_driver = first_driver[first_driver['Position'] == 1]
@@ -685,7 +741,7 @@ with col_row_2[0]:
     weather_evolution_df.Humidity = weather_evolution_df.Humidity.astype('int')
     weather_evolution_df = weather_evolution_df.drop(columns=['Time_sec', 'WindDirection'])
     st.dataframe(weather_evolution_df, 
-                     hide_index=True)
+                     hide_index=True, height=185)
 
 with col_row_2[1]:
     messages = fastf1.api.race_control_messages(session.api_path)
@@ -709,9 +765,98 @@ with col_row_2[1]:
 
     final_formatters = {k: v for k, v in formatters.items() if k in messages_df.columns}
     style_df = style_df.format(final_formatters)
-    st.dataframe(style_df, hide_index=True)
+    st.dataframe(style_df, hide_index=True, height=185)
+
 
 with col_row_2[2]:
+    driver_data_all_laps = []
+    if Lap_Number<10:
+        lap_range =range(0, Lap_Number)
+    else :
+        lap_range = range(Lap_Number-10, Lap_Number)
+    for lap in lap_range:
+        LapTimePerLap = []
+        driver_list = []
+        for driver in session.drivers:
+            try:
+                driver_lap = session.laps.pick_drivers(driver).pick_laps(range(0, Lap_Number + 1))
+                driver_data = str(driver_lap.LapTime.iloc[lap]).split(' ')[2]  + ' ' + str(driver_lap.Compound.iloc[lap]) + ' ' + str(driver_lap.PitInTime.iloc[lap]) + ' '  + str(driver_lap.PitOutTime.iloc[lap])
+            except:
+                driver_data = 'Ø No-data'
+            if driver_data.split(' ')[0] == 'NaT':
+                driver_data = 'Ø No-data'
+            if driver_data != 'Ø No-data':
+                if driver_data.split(' ')[2] != 'NaT':
+                    driver_data = driver_data.split(' ')[1] + ' ' + 'PIT-IN'
+                elif driver_data.split(' ')[3] != 'NaT':
+                    driver_data = driver_data.split(' ')[1] + ' ' + 'OUT'
+            driver_list.append(driver_lap.Driver.iloc[0] + ' ❚ '+ driver)
+            LapTimePerLap.append(driver_data)
+        LapTimePerLapSeries = pd.Series(LapTimePerLap, index=driver_list)
+        driver_data_all_laps.append(LapTimePerLapSeries)
+    driver_data_all_laps_df = pd.DataFrame(driver_data_all_laps)
+    driver_data_all_laps_df = driver_data_all_laps_df.fillna('Ø No-data')
+    if Lap_Number > 10 :
+        driver_data_all_laps_df.index = range(Lap_Number-9, Lap_Number+1)
+    else:
+        driver_data_all_laps_df.index = range(1, Lap_Number+1)
+    styled_df = driver_data_all_laps_df.style
+
+    styled_df.set_properties(**{'color': 'black'})
+
+    styled_df = styled_df.apply(background_color_df)
+
+    header_styles = []
+    for i, col in enumerate(driver_data_all_laps_df.columns):
+        driver_short_name = col.split(' ')[0]
+        try:
+            driver_color = fastf1.plotting.get_driver_color(driver_short_name, session)
+        except Exception: 
+            driver_color = '#000000' 
+        header_styles.append({
+            'selector': f'th.col_heading.col{i}',
+            'props': [('color', driver_color)]
+        })
+
+    styled_df = styled_df.set_table_styles(header_styles, overwrite=False)
+
+    formatters = {}
+    for driver in driver_list:
+        formatters[driver] = lambda x: (
+            str(x)[4:12]
+            if len(str(x).split(' ')) >= 4
+            else x.split(' ')[1]
+        )
+
+    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_all_laps_df.columns}
+    styled_df = styled_df.format(final_formatters)
+
+    overall_fastest = np.min(driver_data_all_laps_df).split(' ')[0]
+    for driver in driver_data_all_laps_df.columns:
+        driver_lap = session.laps.pick_drivers(driver.split(' ')[0]).pick_laps(range(0, Lap_Number + 1))
+        if str(np.min(driver_lap.LapTime)) != 'NaT':
+            driver_fastest_lap = str(np.min(driver_lap.LapTime)).split(' ')[2]
+        else:
+            driver_fastest_lap = 0
+        styled_df.apply(fastest_per_driver, subset= [f'{driver}'], driver_fastest_lap=driver_fastest_lap)
+
+    header_styles = []
+    for i, col in enumerate(driver_data_all_laps_df.columns):
+        driver_short_name = col.split(' ')[0]
+        try:
+            driver_color = fastf1.plotting.get_driver_color(driver_short_name, session)
+        except Exception: 
+            driver_color = '#000000' 
+        header_styles.append({
+            'selector': f'th.col_heading.col{i}',
+            'props': [('color', driver_color)]
+        })
+    styled_df = styled_df.set_table_styles(header_styles, overwrite=False)
+    html_table = styled_df.to_html()
+    #st.markdown(html_table, unsafe_allow_html=True, width="content")
+    st.dataframe(styled_df)
+
+with col_row_3[1]:
     driver_data_best_laps = []
     driver_data_cols = ['Driver', 'Sector1', 'Gap', 'Tyre']
     for driver in session.drivers:
@@ -742,7 +887,7 @@ with col_row_2[2]:
     st.dataframe(styled_df, 
                      hide_index=True)
     
-with col_row_2[3]:
+with col_row_3[2]:
     driver_data_last_laps_df=pd.DataFrame()
     driver_data_best_laps = []
     driver_data_cols = ['Driver', 'Sector2', 'Gap', 'Tyre']
@@ -774,7 +919,7 @@ with col_row_2[3]:
     st.dataframe(styled_df, 
                      hide_index=True)
     
-with col_row_2[4]:
+with col_row_3[3]:
     driver_data_last_laps_df=pd.DataFrame()
     driver_data_best_laps = []
     driver_data_cols = ['Driver', 'Sector3', 'Gap', 'Tyre']
@@ -806,7 +951,7 @@ with col_row_2[4]:
     st.dataframe(styled_df, 
                      hide_index=True)
 
-with col_row_2[5]:
+with col_row_3[4]:
     driver_data_last_laps_df=pd.DataFrame()
     driver_data_best_laps = []
     driver_data_cols = ['Driver', 'LapTime', 'Gap', 'Tyre']
@@ -838,7 +983,7 @@ with col_row_2[5]:
     st.dataframe(styled_df, 
                      hide_index=True)
 
-with col_row_2[6]:
+with col_row_3[5]:
     driver_data_last_laps_df=pd.DataFrame()
     driver_data_best_laps = []
     driver_data_cols = ['Driver', 'TheoraticalBest', 'Gap']
@@ -868,65 +1013,52 @@ with col_row_2[6]:
     st.dataframe(styled_df, 
                      hide_index=True)
 
-
 with col_row_3[0]:
-    driver_data_all_laps = []
-    if Lap_Number<10:
-        lap_range =range(0, Lap_Number)
-    else :
-        lap_range = range(Lap_Number-10, Lap_Number)
-    for lap in lap_range:
-        LapTimePerLap = []
-        driver_list = []
-        for driver in session.drivers:
-            try:
-                driver_lap = session.laps.pick_drivers(driver).pick_laps(range(0, Lap_Number + 1))
-                driver_data = str(driver_lap.LapTime.iloc[lap])  + ' ' + str(driver_lap.Compound.iloc[lap])
-            except:
-                driver_data = 'No data'
-            if 'NaT' in driver_data:
-                driver_data = 'No data'
-            try:
-                driver_list.append(driver_lap.Driver.iloc[0] + ' ❚ '+ driver)
-            except:
-                driver_list.append('UKN' + ' ❚ '+ driver)
-            LapTimePerLap.append(driver_data)
-        LapTimePerLapSeries = pd.Series(LapTimePerLap, index=driver_list)
-        driver_data_all_laps.append(LapTimePerLapSeries)
-    driver_data_all_laps_df = pd.DataFrame(driver_data_all_laps)
+    lap = session.laps.pick_fastest()
+    pos = lap.get_pos_data()
+    circuit_info = session.get_circuit_info()
 
-    driver_data_all_laps_df = driver_data_all_laps_df.fillna('No data')
-    if Lap_Number > 10 :
-        driver_data_all_laps_df.index = range(Lap_Number-9, Lap_Number+1)
-    else:
-        driver_data_all_laps_df.index = range(1, Lap_Number+1) 
-    styled_df = driver_data_all_laps_df.style
-    styled_df.set_properties(**{'color': 'black'})
-    styled_df = styled_df.apply(background_color_df)
+    track = pos.loc[:, ('X', 'Y')].to_numpy()
+    track_angle = circuit_info.rotation / 180 * np.pi
 
-    formatters = {}
-    for driver in driver_list:
-        formatters[driver] = lambda x: (
-            str(x).split(' ')[2][4:-3]
-            if pd.notnull(x) and isinstance(x, str) and ' ' in str(x) and len(str(x).split(' ')) >= 4
+    rotated_track = rotate(track, angle=track_angle)
 
-            else 'No data'
-        )
+    plt.rcParams['axes.spines.left'] = False
+    plt.rcParams['axes.spines.right'] = False
+    plt.rcParams['axes.spines.top'] = False
+    plt.rcParams['axes.spines.bottom'] = False
+    fig, ax = plt.subplots()
+    ax.set_aspect('equal', adjustable='box')
 
-    final_formatters = {k: v for k, v in formatters.items() if k in driver_data_all_laps_df.columns}
-    styled_df = styled_df.format(final_formatters)
-    
-    header_styles = []
-    for i, col in enumerate(driver_data_all_laps_df.columns):
-        driver_short_name = col.split(' ')[0]
+    ax.plot(rotated_track[:, 0], rotated_track[:, 1], linewidth=10, color='dimgrey')
+    ax.tick_params(axis='x', which='both', bottom=False,
+                    top=False, labelbottom=False)
+
+    ax.tick_params(axis='y', which='both', right=False,
+                    left=False, labelleft=False)
+    each_lap = session.laps.pick_laps(range(0, Lap_Number))
+    first_driver_session_time_in_microsec = int(str((each_lap.LapStartTime[each_lap.Position == 1 & (each_lap.LapNumber == max(each_lap.LapNumber))].values/1000)[0]).split(' ')[0])
+
+    for driver in session.drivers:
+
+        each_lap = session.laps.pick_laps(range(0, Lap_Number)).pick_drivers(driver)
+        each_lap = each_lap[each_lap.Position == each_lap.Position]
         try:
-            driver_color = fastf1.plotting.get_driver_color(driver_short_name, session)
-        except Exception: 
-            driver_color = '#000000' 
-        header_styles.append({
-            'selector': f'th.col_heading.col{i}',
-            'props': [('color', driver_color)]
-        })
-    styled_df = styled_df.set_table_styles(header_styles, overwrite=False)
-    html_table = styled_df.to_html()
-    st.markdown(html_table, unsafe_allow_html=True)
+            each_lap_data = each_lap.get_pos_data()
+            
+            each_lap_pos_data = each_lap_data.loc[:, ('X', 'Y')].to_numpy()
+            each_lap_rotated_data = rotate(each_lap_pos_data, angle=track_angle)
+            each_lap_data.loc[:, 'X'] = each_lap_rotated_data[:, 0]
+            each_lap_data.loc[:, 'Y'] = each_lap_rotated_data[:, 1]
+            
+            txt = each_lap.Driver.iloc[0]
+
+            pos_x = (each_lap_data['X'].iloc[(each_lap_data['SessionTime'] - timedelta(microseconds = first_driver_session_time_in_microsec)).abs().argsort()[:1]])
+            pos_y = (each_lap_data['Y'].iloc[(each_lap_data['SessionTime'] - timedelta(microseconds = first_driver_session_time_in_microsec)).abs().argsort()[:1]])
+
+            ax.scatter(pos_x.iloc[0], pos_y.iloc[0], color=fastf1.plotting.get_driver_color(txt, session=session), s=40, zorder=2)
+            ax.text(pos_x.iloc[0], pos_y.iloc[0]+400, txt, color=fastf1.plotting.get_driver_color(txt, session=session), 
+                    va='center_baseline', ha='center', size='x-large', zorder=3)
+        except:
+            continue
+    st.pyplot(fig, clear_figure=True, transparent=True)
