@@ -1,22 +1,15 @@
 import fastf1
 import fastf1.api
 import fastf1.plotting
-from fastf1.ergast import Ergast
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from datetime import timedelta
-import seaborn as sns
 
 import streamlit as st
 import altair as alt 
-import plotly.express
 
-import requests
-from bs4 import BeautifulSoup
-import json
-import codecs
 import pandas as pd
 
 from pathlib import Path
