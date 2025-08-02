@@ -11,8 +11,10 @@ import streamlit as st
 import altair as alt 
 
 import pandas as pd
+import time
 
 from pathlib import Path
+
 parent_file = Path(__file__).resolve().parent.parent
 save_folder_transcription = '/data_dashboard/'
 save_path = str(parent_file) + save_folder_transcription
@@ -25,24 +27,49 @@ st.set_page_config(
 )
 alt.theme.enable("dark")
 
+
+def event_format(year, race_number):
+    match year:
+        case 2019:
+            return 'conventional'
+        case 2020:
+            return 'conventional'
+        case 2021:
+            return 'conventional'
+        case 2022:
+            return 'conventional'
+        case 2023:
+            if race_number in [5, 11, 14, 19, 20, 22]:
+                return 'sprint_qualifying'
+            else:
+                return 'conventional'
+        case 2024:
+            if race_number in [5, 6, 11, 19, 21, 23]:
+                return 'sprint_qualifying'
+            else:
+                return 'conventional'
+        case 2025:
+            if race_number in [2, 5, 13, 19, 21, 23]:
+                return 'sprint_qualifying'
+            else:
+                return 'conventional'
+        
+
 with st.sidebar:
     st.title('🏁🏎️ F1 Analysis')
     
-    year_list = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+    year_list = [2023, 2024, 2025]
     year = st.selectbox('Select a year', year_list, index=len(year_list)-1)
 
     race_list = list(range(1,25))
     race_number = st.selectbox('Select a race', race_list, index=12)
 
-    race_session = 'Race'
-    session= fastf1.get_session(year, race_number, race_session)
-    session.load()
-    if session.event.EventFormat == 'conventional':
+    if event_format(year, race_number) == 'conventional':
         session_list = ['Practice 1', 'Practice 2', 'Practice 3', 'Qualifying', 'Race']
         race_session = st.selectbox('Select a session', session_list, index=len(session_list)-1)
         session= fastf1.get_session(year, race_number, race_session)
         session.load()
-    elif session.event.EventFormat == 'sprint_qualifying':
+    elif event_format(year, race_number) == 'sprint_qualifying':
         session_list = ['Practice 1', 'Sprint Qualifying', 'Sprint', 'Qualifying', 'Race']
         race_session = st.selectbox('Select a session', session_list, index=len(session_list)-1)    
         session= fastf1.get_session(year, race_number, race_session)
@@ -77,6 +104,9 @@ with st.sidebar:
     teams = fastf1.plotting.list_team_names(session)
     team = st.selectbox('Select a team', teams, index=4)
 
+team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
+event_name = session.event.EventName
+        
 def highlight(s, min_max):
     if min_max == 'min':
         is_min_max = s == s.min()
@@ -264,13 +294,6 @@ tyres={
     'HYPERSOFT': '🩷',
     'SUPERHARD': '🍊',
 }
-
-session= fastf1.get_session(year, race_number, race_session)
-session.load()
-
-teams = fastf1.plotting.list_team_names(session)
-team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=session)
-event_name = session.event.EventName
 
 col_row_1 = st.columns((3, 0.5, 2, 2), gap='small')
 col_row_2 = st.columns((1.6, 1.6 , 4), gap='small')
