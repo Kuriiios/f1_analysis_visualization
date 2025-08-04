@@ -2,6 +2,7 @@ import torch
 import torchaudio
 from torch_audiomentations import Gain, ApplyImpulseResponse
 import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 from pydub import AudioSegment
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import torch
@@ -12,12 +13,12 @@ from bs4 import BeautifulSoup
 import json
 import codecs
 import pandas as pd
-
+torch.cuda.empty_cache()
 torch.manual_seed(0)
 
 from pathlib import Path
-parent_file = Path(__file__).resolve().parent.parent.parent
-save_folder_transcription = '/data/internal/'
+parent_file = Path(__file__).resolve().parent.parent.parent.parent
+save_folder_transcription = '/data_dashboard/'
 save_path = str(parent_file) + save_folder_transcription
 print(save_path)
 
@@ -64,30 +65,32 @@ def audio_to_txt(audio_url):
         data = file.read().replace('\n', '')
     return data
 
-year = int(input('Year ? '))
-race_number = int(input('Race Number ? (1-24) '))
+def get_uncreated_team_radio(year, race_number):
+    session= fastf1.get_session(year, race_number, 'R')
+    session.load()
 
-session= fastf1.get_session(year, race_number, 'R')
-session.load()
+    path = str(year) + '/' + str(session.event['Session5Date'])[:10] + '_'+ str(session.event['EventName']).replace(' ','_') + '/' +str(session.event['Session5Date'])[:10]+'_'+str(session.event['Session5']) + '/'
+    resource_name = 'https://livetiming.formula1.com/static/'
+    full_url = resource_name + path + 'TeamRadio.json'
 
-path = str(year) + '/' + str(session.event['Session5Date'])[:10] + '_'+ str(session.event['EventName']).replace(' ','_') + '/' +str(session.event['Session5Date'])[:10]+'_'+str(session.event['Session5']) + '/'
-resource_name = 'https://livetiming.formula1.com/static/'
-full_url = resource_name + path + 'TeamRadio.json'
+    page = requests.get(full_url)
+    soup = BeautifulSoup(page.text, "html.parser")
 
-page = requests.get(full_url)
-soup = BeautifulSoup(page.text, "html.parser")
+    site_json=json.loads(soup.text[1:])
+    date_list = []
+    driver_number_list = []
+    new_url_list = []
+    transcription_list = []
+    for i in range(0, len(list(site_json.values())[0])):
+        val_json = list(list(site_json.values())[0][i].values())
+        date_list.append(val_json[0].replace('T', ' ')[:19])
+        driver_number_list.append(val_json[1])
+        new_url_list.append(resource_name + path + val_json[2])
+        transcription_list.append(audio_to_txt(resource_name + path + val_json[2]))
+    df = pd.DataFrame({'Time' :date_list, 'transcription': transcription_list, 'url': new_url_list}, index = driver_number_list)
+    os.remove("./improved_audio.txt")
+    df.to_csv(str(save_path) + (str(session.event.Session5Date)[:10]+'_'+str(session.event.EventName).replace(' ','_')+'.csv'))
 
-site_json=json.loads(soup.text[1:])
-date_list = []
-driver_number_list = []
-new_url_list = []
-transcription_list = []
-for i in range(0, len(list(site_json.values())[0])):
-    val_json = list(list(site_json.values())[0][i].values())
-    date_list.append(val_json[0].replace('T', ' ')[:19])
-    driver_number_list.append(val_json[1])
-    new_url_list.append(resource_name + path + val_json[2])
-    transcription_list.append(audio_to_txt(resource_name + path + val_json[2]))
-df = pd.DataFrame({'Time' :date_list, 'transcription': transcription_list, 'url': new_url_list}, index = driver_number_list)
-os.remove("./improved_audio.txt")
-df.to_csv(str(save_path) + (str(session.event.Session5Date)[:10]+'_'+str(session.event.EventName).replace(' ','_')+'.csv'))
+#year = int(input('Year ? '))
+#race_number = int(input('Race Number ? (1-24) '))
+#get_uncreated_team_radio(year, race_number)
