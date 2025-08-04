@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 import fastf1
 from pathlib import Path
-import data.team_radio as team_radio
 
 parent_file = Path(__file__).resolve().parent.parent.parent.parent
 save_folder_transcription = '/data_dashboard/'
