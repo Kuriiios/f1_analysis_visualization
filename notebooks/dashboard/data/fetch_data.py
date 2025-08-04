@@ -27,9 +27,5 @@ def get_session(year, race_number, race_session):
     return session
 
 def get_team_radio(session, year, race_number):
-    try:
-        team_radio_df = pd.read_csv(filepath_or_buffer = (str(save_path) + str(session.event.Session5Date)[:10]+'_'+str(session.event.EventName).replace(' ','_')+'.csv'), index_col=0)
-    except:
-        team_radio.get_uncreated_team_radio(year=year, race_number=race_number)
-        team_radio_df = pd.read_csv(filepath_or_buffer = (str(save_path) + str(session.event.Session5Date)[:10]+'_'+str(session.event.EventName).replace(' ','_')+'.csv'), index_col=0)
+    team_radio_df = pd.read_csv(filepath_or_buffer = (str(save_path) + str(session.event.Session5Date)[:10]+'_'+str(session.event.EventName).replace(' ','_')+'.csv'), index_col=0)
     return team_radio_df
