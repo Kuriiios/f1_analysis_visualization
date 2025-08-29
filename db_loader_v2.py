@@ -45,7 +45,7 @@ drivers_info = {
     44: [44, "HAM", "Lewis Hamilton", "#7a25f0", "UK"],
     22: [22, "TSU", "Yuki Tsunoda", "#fd8b35", "JP"],
     6: [6, "HAD", "Isack Hadjar", "#0023d1", "FR"],
-    23: [23, "ALB", "Alexander Albon", "#0023d1", "TH"],
+    23: [23, "ALB", "Alexander Albon", "#1d3728", "TH"],
     55: [55, "SAI", "Carlos Sainz", "#da291c", "ES"],
     27: [27, "HUL", "Nico Hulkenberg", "#181c25", "DE"],
     5: [5, "BOR", "Gabriel Bortoleto", "#a5cd39", "BR"],
