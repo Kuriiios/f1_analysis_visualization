@@ -1,6 +1,6 @@
 import streamlit as st
 from logic.sidebar import render_sidebar 
-from logic.pages_logic import render_dashboard
+from logic.pages_logic import render_race_recap
 
 st.set_page_config(
     page_title='F1 Dashboard',
@@ -12,4 +12,4 @@ st.set_page_config(
 with st.sidebar:
     state = render_sidebar()
 
-render_dashboard(*state)
+render_race_recap(*state)

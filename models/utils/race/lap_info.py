@@ -71,19 +71,6 @@ def fixed_nat_fast_laps(team, session):
 
 
 def get_pitstop_time(session, team_drivers, year, race_number):
-    """
-    Retrieves pit stop information for the two drivers of a team.
-
-    Args:
-        session (fastf1.core.Session): The race session data.
-        team_drivers (list): A list containing the driver abbreviations for the team.
-        year (int): The year of the race.
-        race_number (int): The race number.
-
-    Returns:
-        tuple: A tuple containing pit stop numbers and total durations for both drivers.
-               (driver_1_pit_number, driver_1_total_duration, driver_2_pit_number, driver_2_total_duration)
-    """
     try:
         driver_1_name = fastf1.plotting.get_driver_name(team_drivers[0], session).split()[1].lower()
         if driver_1_name == 'verstappen':
@@ -112,17 +99,6 @@ def get_pitstop_time(session, team_drivers, year, race_number):
     return pit0_number, pit0_total_duration, pit1_number, pit1_total_duration
 
 def get_faster_driver_per_lap(session, team, team_drivers):
-    """
-    Determines the faster driver for each lap of the race.
-
-    Args:
-        session (fastf1.core.Session): The race session data.
-        team_drivers (list): A list containing the driver abbreviations for the team.
-
-    Returns:
-        list: A list where each element represents the faster driver for that lap:
-              0 for driver 1, 1 for driver 2, 2 for a safety car lap.
-    """
     driver_1_laps, driver_2_laps = fixed_nat_all_laps(team, session)
 
     fastest_driver_per_lap = []
@@ -163,17 +139,6 @@ def get_faster_driver_per_lap(session, team, team_drivers):
     return fastest_driver_per_lap
 
 def get_lap_repartition(fastest_driver_per_lap):
-    """
-    Calculates the number of laps each driver was faster and the number of safety car laps.
-
-    Args:
-        fastest_driver_per_lap (list): A list indicating the faster driver for each lap.
-    
-    Returns:
-        list: A list containing the number of laps driver 1 was faster, 
-              the number of laps driver 2 was faster, the number of safety car laps,
-              and the original fastest_driver_per_lap list.
-    """
     driver_1_faster = str(fastest_driver_per_lap.count(0))+ '/' + str(len(fastest_driver_per_lap))
     driver_2_faster = str(fastest_driver_per_lap.count(1))+ '/' + str(len(fastest_driver_per_lap))
     safety_car_lap = str(fastest_driver_per_lap.count(2))+ '/' + str(len(fastest_driver_per_lap))
@@ -187,16 +152,6 @@ def get_lap_repartition(fastest_driver_per_lap):
     return team_info
 
 def get_final_gap(session, team):
-    """
-    Calculates the final time gap between the two drivers of a team.
-
-    Args:
-        session (fastf1.core.Session): The race session data.
-        team_drivers (list): A list containing the driver abbreviations for the team.
-
-    Returns:
-        tuple: A tuple containing the final time gap for each driver in the format "+/- X s" or "+/- X laps".
-    """
     try:
         driver_1_laps, driver_2_laps = fixed_nat_all_laps(team, session)
         race_time_driver_1 = driver_1_laps['LapTime'].sum()
@@ -231,17 +186,6 @@ def get_final_gap(session, team):
     return driver_1_gap, driver_2_gap
 
 def get_drivers_info(session, team, team_drivers, race_session, year, race_number):
-    """
-    Retrieves relevant race information for the two drivers of a team.
-
-    Args:
-        session (fastf1.core.Session): The race session data.
-        team_drivers (list): A list containing the driver abbreviations for the team.
-
-    Returns:
-        list: A list containing driver information including name, final position, final gap,
-              race time, average lap time, IQR, pit stop number, and total pit stop duration for both drivers.
-    """
     driver_1_laps_fast, driver_2_laps_fast = fixed_nat_fast_laps(team, session)
     driver_1_laps_all, driver_2_laps_all = fixed_nat_all_laps(team, session)
     try:
@@ -262,9 +206,7 @@ def get_drivers_info(session, team, team_drivers, race_session, year, race_numbe
         driver_2_name = 'Ollie Bearman'
     
     driver_1_gap, driver_2_gap = get_final_gap(session, team)
-    # year and race_number are not defined.
-    # If the user provides year and race_number, you can uncomment the following lines
-    # and remove the  elif.
+  
     if race_session == 'R':
         pit0_number, pit0_total_duration, pit1_number, pit1_total_duration = get_pitstop_time(session, team_drivers, year, race_number)
     elif race_session == 'S':
@@ -330,21 +272,7 @@ def get_drivers_info(session, team, team_drivers, race_session, year, race_numbe
     return drivers_info
     
 def create_csv_race_info(list, drivers_info, team_info, event_name, race_session):
-    """
-    Creates a list formatted for conversion to a CSV file, containing race information.
-
-    Args:
-        session (fastf1.core.Session): The race session data.
-        team (str): The name of the team.
-        list (list): The list to append the race information to.
-        drivers_info (list): A list containing driver information.
-        team_info (list): A list containing team information.
-        event_name (str): The name of the race event.
-        race_session (str): The type of race session ('R' for race, 'S' for sprint race).
-
-    Returns:
-        list: The updated list containing race information.
-    """
+   
     race_info_csv = list
     if race_session == 'R':
         event_title = event_name.split(' ', 1)[0]+ ' GP Race '

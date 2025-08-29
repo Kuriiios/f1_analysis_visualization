@@ -6,9 +6,6 @@ import data.fetch_data as dt
 
 def style_lap_df(df, session, Lap_Number):
     df['Tyre'] = df.Tyre.replace(to_replace = dt.tyres)
-    df = df.sort_values(['LapTime'] if 'LapTime' in df else ['Position'])
-    df['Gap_ahead_Driver'] = df['LapTime' if 'LapTime' in df else 'Time'].diff()
-    df['Gap_to_Leader'] = df['LapTime' if 'LapTime' in df else 'Time'] - df.iloc[0]['LapTime' if 'LapTime' in df else 'Time']
     df.index = range(1, len(df) + 1)
     
     style_df = df.style
@@ -37,7 +34,7 @@ def style_lap_df(df, session, Lap_Number):
         'Lap': lambda x: int(x) if pd.notnull(x) else 'No Data',
         'PitStop': lambda x: int(x) if pd.notnull(x) else 'No Data',
         'Gap_ahead_Driver': lambda x: str(abs(x))[7:-3] if pd.notnull(x) else 'No Data',
-        'Gap_to_Leader': lambda x: str(x)[7:-3] if pd.notnull(x) else 'No Data',
+        'Gap_to_Leader': lambda x: str(abs(x))[7:-3] if pd.notnull(x) else 'No Data',
     })
 
 
