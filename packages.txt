@@ -5,3 +5,6 @@ libavdevice-dev
 libavutil-dev
 libswscale-dev
 libswresample-dev
+default-libmysqlclient-dev
+build-essential
+libgl1-mesa-glx
