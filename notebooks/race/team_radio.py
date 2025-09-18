@@ -18,7 +18,7 @@ torch.manual_seed(0)
 
 from pathlib import Path
 parent_file = Path(__file__).resolve().parent.parent.parent.parent
-save_folder_transcription = '/data_dashboard/'
+save_folder_transcription = '/f1_analysis/data_dashboard/'
 save_path = str(parent_file) + save_folder_transcription
 print(save_path)
 
@@ -91,6 +91,6 @@ def get_uncreated_team_radio(year, race_number):
     os.remove("./improved_audio.txt")
     df.to_csv(str(save_path) + (str(session.event.Session5Date)[:10]+'_'+str(session.event.EventName).replace(' ','_')+'.csv'))
 
-#year = int(input('Year ? '))
-#race_number = int(input('Race Number ? (1-24) '))
-#get_uncreated_team_radio(year, race_number)
+year = int(input('Year ? '))
+race_number = int(input('Race Number ? (1-24) '))
+get_uncreated_team_radio(year, race_number)

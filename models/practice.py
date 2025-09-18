@@ -2,10 +2,8 @@ from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_CONNECTOR
-from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR
 from pptx.enum.text import PP_ALIGN
-from pptx.oxml.xmlchemy import OxmlElement
 
 from instagrapi import Client
 from pathlib import Path
@@ -20,7 +18,6 @@ import pandas as pd
 import numpy as np
 import os  
 from datetime import timedelta
-import csv
 from fastf1.ergast import Ergast
 
 parent_file = Path(__file__).resolve().parent.parent
@@ -56,12 +53,6 @@ event_name = practice_session.event.EventName
 report_folder = parent_file / 'reports' / f"{race_number}_{event_name}_{practice_session.event.year}"
 report_folder.mkdir(parents=True, exist_ok=True)
 
-def SubElement(parent, tagname, **kwargs):
-        element = OxmlElement(tagname)
-        element.attrib.update(kwargs)
-        parent.append(element)
-        return element
-
 def read_credentials(file = parent_file / "data/raw/login.txt"):
     creds = {}
     with open(file) as f:
@@ -69,15 +60,6 @@ def read_credentials(file = parent_file / "data/raw/login.txt"):
             key, value = line.strip().split("=")
             creds[key] = value
     return creds
-
-def _set_shape_transparency(shape, alpha):
-    """ Set the transparency (alpha) of a shape"""
-    ts = shape.fill._xPr.solidFill
-    sF = ts.get_or_change_to_srgbClr()
-    sE = SubElement(sF, 'a:alpha', val=str(alpha))
-    
-def Hex_RGB(ip):
-    return tuple(int(ip[i+1:i+3],16) for i in (0, 2, 4))
 
 practice_track_status = {}
 figures_path = '/home/kurios/Documents/f1_analysis/reports/'
@@ -98,8 +80,13 @@ humidity_range = str((min(practice_session.weather_data['Humidity']), (max(pract
 
 teams = fastf1.plotting.list_team_names(practice_session)
 
+QUAL_LAP_PARAM = 1.03
+RACE_LAP_PARAM = 1.13
+
 for idx, team in enumerate(teams):
     team_drivers = fastf1.plotting.get_driver_abbreviations_by_team(team, session=practice_session)
+
+    fastest_lap_session = practice_session.laps.pick_fastest()['LapTime']
 
     driver_info_1 = practice_session.get_driver(team_drivers[0])
     driver_info_2 = practice_session.get_driver(team_drivers[1])
@@ -129,23 +116,35 @@ for idx, team in enumerate(teams):
         except:
             fastest_lap_driver_1 = 'No Data'
 
-        driver_stints_driver_1 = stints[stints['Driver'] == driver_1]
+        driver_stints_driver_1 = stints[stints['Driver'] == driver_1].copy()
+        
+        for index, row in driver_stints_driver_1.iterrows():
+            driver_lap = practice_session.laps.pick_drivers(driver_1).pick_laps(range(int(row['FirstLap']), int(row['LastLap'])+1))
+            driver_lap.loc[:, 'LapTime'] = driver_lap['LapTime'].fillna(driver_lap['Sector1Time'] + driver_lap['Sector2Time'] + driver_lap['Sector3Time'])
+            driver_lap.loc[:, 'LapTime'] = driver_lap['LapTime'].fillna(driver_lap['Sector1Time'] + driver_lap['Sector2Time'] + driver_lap['Sector3Time'])
+            driver_lap.loc[:, 'LapTime'] = driver_lap['LapTime'].fillna(driver_lap['Time'] - driver_lap['PitOutTime'])
+            
+            fastest_lap_driver = timedelta(seconds = driver_lap['LapTime'].dt.total_seconds().min())
+            quick_laps = driver_lap[driver_lap['LapTime'] < fastest_lap_driver * QUAL_LAP_PARAM]
+            avg_quick_laptime = quick_laps['LapTime'].median()
+            number_quick_laptime = len(quick_laps['LapTime'])
 
-        data_driver_1 = []
-        try:
-            for index, row in driver_stints_driver_1.iterrows():
-                driver_lap = practice_session.laps.pick_drivers(driver_1).pick_laps(range(int(row['FirstLap']), int(row['LastLap'])+1)).pick_quicklaps()
-                number_lap_driver_1 = int(driver_lap['LapTime'].count())
-                driver_avg_lap_driver_1 = str(timedelta(seconds = driver_lap['LapTime'].dt.total_seconds().median()))[3:-3]
-                compound_driver_1 = stints['Compound'][index]
-                data_driver_1.append(compound_driver_1)
-                data_driver_1.append(number_lap_driver_1)
-                data_driver_1.append(driver_avg_lap_driver_1)
-        except:
-            driver_avg_lap_driver_1 = 'No Average Lap Time Found'
-            compound_driver_1 = 'No Compound Found'
-            number_lap_driver_1 = 'No Lap completed'
-        data_driver_1_len = int(len(data_driver_1)/3)
+            driver_stints_driver_1.loc[index, 'fastest_laptime'] = fastest_lap_driver
+            driver_stints_driver_1.loc[index, 'number_quick_laptime'] = number_quick_laptime
+            driver_stints_driver_1.loc[index, 'avg_quick_laptime'] = avg_quick_laptime
+            driver_stints_driver_1.loc[index, 'fp_session'] = free_practice_session
+            driver_stints_driver_1.loc[index, 'SpeedTotal'] = driver_lap['SpeedI1'].median() + driver_lap['SpeedI2'].median() +  driver_lap['SpeedFL'].median() + driver_lap['SpeedST'].median()
+
+            driver_stints_driver_1['high_engine_mode'] = np.where(driver_stints_driver_1['SpeedTotal'] > driver_stints_driver_1['SpeedTotal'].quantile(q = [0.75]).values[0], 1, 0)
+            driver_stints_driver_1['low_engine_mode'] = np.where(driver_stints_driver_1['SpeedTotal'] < driver_stints_driver_1['SpeedTotal'].quantile(q = [0.25]).values[0], 1, 0)
+       
+            if not driver_stints_driver_1.empty:
+                driver_stints_driver_1['quali_sim'] = np.where((driver_stints_driver_1['avg_quick_laptime'] < driver_stints_driver_1['fastest_laptime'].min()*QUAL_LAP_PARAM) & (driver_stints_driver_1['avg_quick_laptime'] <= fastest_lap_session * QUAL_LAP_PARAM) & (driver_stints_driver_1['Compound'] != 'HARD'), 1, 0)
+                driver_stints_driver_1['race_sim'] = np.where((driver_stints_driver_1['avg_quick_laptime'] > driver_stints_driver_1['fastest_laptime'].min()*QUAL_LAP_PARAM) & (driver_stints_driver_1['avg_quick_laptime'] < driver_stints_driver_1['fastest_laptime'].min()*RACE_LAP_PARAM), 1, 0)
+
+        driver_stints_driver_1 = driver_stints_driver_1.dropna()
+        data_driver_1_len = len(driver_stints_driver_1)
+        data_driver_1 = driver_stints_driver_1
 
     #DRIVER 2 DATA    
     driver_2 = driver_info_2['DriverNumber']
@@ -172,24 +171,36 @@ for idx, team in enumerate(teams):
         except:
             fastest_lap_driver_2 = 'No Data'
 
-        driver_stints_driver_2 = stints[stints['Driver'] == driver_2]
+        driver_stints_driver_2 = stints[stints['Driver'] == driver_2].copy()
+        
+        for index, row in driver_stints_driver_2.iterrows():
+            driver_lap = practice_session.laps.pick_drivers(driver_2).pick_laps(range(int(row['FirstLap']), int(row['LastLap'])+1))
+            driver_lap.loc[:, 'LapTime'] = driver_lap['LapTime'].fillna(driver_lap['Sector1Time'] + driver_lap['Sector2Time'] + driver_lap['Sector3Time'])
+            driver_lap.loc[:, 'LapTime'] = driver_lap['LapTime'].fillna(driver_lap['Sector1Time'] + driver_lap['Sector2Time'] + driver_lap['Sector3Time'])
+            driver_lap.loc[:, 'LapTime'] = driver_lap['LapTime'].fillna(driver_lap['Time'] - driver_lap['PitOutTime'])
+            
+            fastest_lap_driver = timedelta(seconds = driver_lap['LapTime'].dt.total_seconds().min())
+            quick_laps = driver_lap[driver_lap['LapTime'] < fastest_lap_driver * QUAL_LAP_PARAM]
+            avg_quick_laptime = quick_laps['LapTime'].median()
+            number_quick_laptime = len(quick_laps['LapTime'])
 
-        data_driver_2 = []
-        try:
-            for index, row in driver_stints_driver_2.iterrows():
-                driver_lap = practice_session.laps.pick_drivers(driver_2).pick_laps(range(int(row['FirstLap']), int(row['LastLap'])+1)).pick_quicklaps()
-                number_lap_driver_2 = int(driver_lap['LapTime'].count())
-                driver_avg_lap_driver_2 = str(timedelta(seconds = driver_lap['LapTime'].dt.total_seconds().median()))[3:-3]
-                compound_driver_2 = stints['Compound'][index]
-                data_driver_2.append(compound_driver_2)
-                data_driver_2.append(number_lap_driver_2)
-                data_driver_2.append(driver_avg_lap_driver_2)
-        except:
-            driver_avg_lap_driver_2 = 'No Average Lap Time Found'
-            compound_driver_2 = 'No Compound Found'
-            number_lap_driver_2 = 'No Lap completed'
-        data_driver_2_len = int(len(data_driver_2)/3)
+            driver_stints_driver_2.loc[index, 'fastest_laptime'] = fastest_lap_driver
+            driver_stints_driver_2.loc[index, 'number_quick_laptime'] = number_quick_laptime
+            driver_stints_driver_2.loc[index, 'avg_quick_laptime'] = avg_quick_laptime
+            driver_stints_driver_2.loc[index, 'fp_session'] = free_practice_session
+            driver_stints_driver_2.loc[index, 'SpeedTotal'] = driver_lap['SpeedI1'].median() + driver_lap['SpeedI2'].median() +  driver_lap['SpeedFL'].median() + driver_lap['SpeedST'].median()
 
+            driver_stints_driver_2['high_engine_mode'] = np.where(driver_stints_driver_2['SpeedTotal'] > driver_stints_driver_2['SpeedTotal'].quantile(q = [0.75]).values[0], 1, 0)
+            driver_stints_driver_2['low_engine_mode'] = np.where(driver_stints_driver_2['SpeedTotal'] < driver_stints_driver_2['SpeedTotal'].quantile(q = [0.25]).values[0], 1, 0)
+        
+            if not driver_stints_driver_2.empty:
+                driver_stints_driver_2['quali_sim'] = np.where((driver_stints_driver_2['avg_quick_laptime'] < driver_stints_driver_2['fastest_laptime'].min()*QUAL_LAP_PARAM) & (driver_stints_driver_2['avg_quick_laptime'] <= fastest_lap_session * QUAL_LAP_PARAM) & (driver_stints_driver_2['Compound'] != 'HARD'), 1, 0)
+                driver_stints_driver_2['race_sim'] = np.where((driver_stints_driver_2['avg_quick_laptime'] > driver_stints_driver_2['fastest_laptime'].min()*QUAL_LAP_PARAM) & (driver_stints_driver_2['avg_quick_laptime'] < driver_stints_driver_2['fastest_laptime'].min()*RACE_LAP_PARAM), 1, 0)
+
+        driver_stints_driver_2 = driver_stints_driver_2.dropna()
+        data_driver_2_len = len(driver_stints_driver_2)
+        data_driver_2 = driver_stints_driver_2
+       
     race_name = str(practice_session)[20:]
     
     team_logo = f'/home/kurios/Documents/f1_analysis/data/external/team_logos/{team}.png'
@@ -308,7 +319,7 @@ for idx, team in enumerate(teams):
     tf = txBox.text_frame
     p = tf.add_paragraph()
     run = p.add_run()
-    run.text = "Number Laps"
+    run.text = "Laps"
     run.font.name = 'Formula1 Display Bold'
     run.font.size = Pt(16)
     p.font.color.rgb = RGBColor(120, 120, 120)
@@ -317,7 +328,7 @@ for idx, team in enumerate(teams):
     tf = txBox.text_frame
     p = tf.add_paragraph()
     run = p.add_run()
-    run.text = "Tyre Type"
+    run.text = "Estimation Protocol"
     run.font.name = 'Formula1 Display Bold'
     run.font.size = Pt(16)
     p.font.color.rgb = RGBColor(120, 120, 120)
@@ -326,7 +337,7 @@ for idx, team in enumerate(teams):
     tf = txBox.text_frame
     p = tf.add_paragraph()
     run = p.add_run()
-    run.text = "Average Lap Time"
+    run.text = "Lap Times"
     run.font.name = 'Formula1 Display Bold'
     run.font.size = Pt(16)
     p.font.color.rgb = RGBColor(120, 120, 120)
@@ -335,7 +346,7 @@ for idx, team in enumerate(teams):
     tf = txBox.text_frame
     p = tf.add_paragraph()
     run = p.add_run()
-    run.text = "Number Laps"
+    run.text = "Laps"
     run.font.name = 'Formula1 Display Bold'
     run.font.size = Pt(16)
     p.font.color.rgb = RGBColor(120, 120, 120)
@@ -344,7 +355,7 @@ for idx, team in enumerate(teams):
     tf = txBox.text_frame
     p = tf.add_paragraph()
     run = p.add_run()
-    run.text = "Tyre Type"
+    run.text = "Estimation Protocol"
     run.font.name = 'Formula1 Display Bold'
     run.font.size = Pt(16)
     p.font.color.rgb = RGBColor(120, 120, 120)
@@ -353,7 +364,7 @@ for idx, team in enumerate(teams):
     tf = txBox.text_frame
     p = tf.add_paragraph()
     run = p.add_run()
-    run.text = "Average Lap Time"
+    run.text = "Lap Times"
     run.font.name = 'Formula1 Display Bold'
     run.font.size = Pt(16)
     p.font.color.rgb = RGBColor(120, 120, 120)
@@ -374,35 +385,48 @@ for idx, team in enumerate(teams):
             p = text_frame.add_paragraph()
             run = p.add_run()
             y = i * 3
-            run.text = f'{data_driver_1[y+1]}'
+            run.text = f'{int(data_driver_1.number_quick_laptime.iloc[i])} out of {data_driver_1.LapCount.iloc[i]} laps on {data_driver_1.Compound.iloc[i]}'
             
             run.font.name = 'Formula1 Display Regular'
-            run.font.size = Pt(26)
+            run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
-            
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+
             cell = table.cell(i, 1)
             fill = cell.fill
             fill.solid()
-            
             fill.fore_color.rgb = RGBColor(21, 21, 30)
+
+            if (data_driver_1.quali_sim.iloc[i]) == 1:
+                simulation = 'Quali Sim'
+            elif (data_driver_1.race_sim.iloc[i]) == 1:
+                simulation = 'Race Sim'
+            else:
+                simulation = 'Abandoned'
+
+            if (data_driver_1.high_engine_mode.iloc[i]) == 1:
+                engine_mode = 'Push'
+            elif (data_driver_1.low_engine_mode.iloc[i]) == 1:
+                engine_mode = 'ERS'
+            else:
+                engine_mode = 'Neutral'
 
             text_frame = cell.text_frame
             text_frame.clear()  
 
             p = text_frame.add_paragraph()
             run = p.add_run()
-            run.text = f'{data_driver_1[y]}'
+            run.text = f'Mode:{engine_mode} \n{simulation}'
             
             run.font.name = 'Formula1 Display Regular'
-            run.font.size = Pt(26)
+            run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-            
+
             cell = table.cell(i, 2)
             fill = cell.fill
             fill.solid()
@@ -414,14 +438,15 @@ for idx, team in enumerate(teams):
 
             p = text_frame.add_paragraph()
             run = p.add_run()
-            run.text = f'{data_driver_1[y+2]}'
+            run.text = f'Best : {str(data_driver_1.fastest_laptime.iloc[i])[11:-3]}\nAvg : {str(data_driver_1.avg_quick_laptime.iloc[i])[11:-3]}   '
             
             run.font.name = 'Formula1 Display Regular'
-            run.font.size = Pt(26)
+            run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+
     else:
         shape = slide.shapes.add_table(1, 1,left=Pt(40), top= Pt(450), width=Pt(460), height=Pt(800))
         table = shape.table
@@ -436,7 +461,7 @@ for idx, team in enumerate(teams):
 
         p = text_frame.add_paragraph()
         run = p.add_run()
-        y = i * 3
+        y = 0
         run.text = f'No data'
         
         run.font.name = 'Formula1 Display Regular'
@@ -462,35 +487,48 @@ for idx, team in enumerate(teams):
             p = text_frame.add_paragraph()
             run = p.add_run()
             y = i * 3
-            run.text = f'{data_driver_2[y+1]}'
+            run.text = f'{int(data_driver_2.number_quick_laptime.iloc[i])} out of {data_driver_2.LapCount.iloc[i]} laps on {data_driver_2.Compound.iloc[i]}'
             
             run.font.name = 'Formula1 Display Regular'
-            run.font.size = Pt(26)
+            run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-            
+
             cell = table.cell(i, 1)
             fill = cell.fill
             fill.solid()
-            
             fill.fore_color.rgb = RGBColor(21, 21, 30)
+
+            if (data_driver_2.quali_sim.iloc[i]) == 1:
+                simulation = 'Quali Sim'
+            elif (data_driver_2.race_sim.iloc[i]) == 1:
+                simulation = 'Race Sim'
+            else:
+                simulation = 'Abandoned'
+
+            if (data_driver_2.high_engine_mode.iloc[i]) == 1:
+                engine_mode = 'Push'
+            elif (data_driver_2.low_engine_mode.iloc[i]) == 1:
+                engine_mode = 'Recovery'
+            else:
+                engine_mode = 'Neutral'
 
             text_frame = cell.text_frame
             text_frame.clear()  
 
             p = text_frame.add_paragraph()
             run = p.add_run()
-            run.text = f'{data_driver_2[y]}'
+            run.text = f'Mode:{engine_mode} \n{simulation}'
             
             run.font.name = 'Formula1 Display Regular'
-            run.font.size = Pt(26)
+            run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-            
+
             cell = table.cell(i, 2)
             fill = cell.fill
             fill.solid()
@@ -502,10 +540,10 @@ for idx, team in enumerate(teams):
 
             p = text_frame.add_paragraph()
             run = p.add_run()
-            run.text = f'{data_driver_2[y+2]}'
+            run.text = f'Best:{str(data_driver_2.fastest_laptime.iloc[i])[11:-3]}\nAvg:{str(data_driver_2.avg_quick_laptime.iloc[i])[11:-3]}'
             
             run.font.name = 'Formula1 Display Regular'
-            run.font.size = Pt(26)
+            run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
@@ -524,7 +562,7 @@ for idx, team in enumerate(teams):
 
         p = text_frame.add_paragraph()
         run = p.add_run()
-        y = i * 3
+        y = 0
         run.text = f'No data'
         
         run.font.name = 'Formula1 Display Regular'
