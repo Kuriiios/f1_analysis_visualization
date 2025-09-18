@@ -37,7 +37,7 @@ def render_sidebar():
     year = st.selectbox('Select a year', year_list, index=len(year_list) - 1)
 
     race_list = list(range(1, 25))
-    race_number = st.selectbox('Select a race', race_list, index=12)
+    race_number = st.selectbox('Select a race', race_list, index=15)
 
     event = event_format(year, race_number)
     session_list = {
