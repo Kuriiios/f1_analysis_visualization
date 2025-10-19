@@ -1,15 +1,9 @@
-import seaborn as sns
-from matplotlib import pyplot as plt
-from datetime import timedelta
-
-from instagrapi import Client
 import subprocess
 from pdf2image import convert_from_path
 
 from utils.utils import *
 
 import fastf1
-import fastf1.plotting
 from fastf1.ergast import Ergast
 
 import os
@@ -20,15 +14,10 @@ import numpy as np
 import ast
 
 from pathlib import Path
-from matplotlib.ticker import FuncFormatter
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_CONNECTOR
-from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
-from pptx.enum.text import MSO_AUTO_SIZE
-from pptx.oxml.xmlchemy import OxmlElement
 
 ergast = Ergast()
 

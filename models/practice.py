@@ -1,7 +1,6 @@
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_CONNECTOR
 from pptx.enum.text import MSO_ANCHOR
 from pptx.enum.text import PP_ALIGN
 
@@ -456,15 +455,15 @@ for idx, team in enumerate(teams):
         cell.vertical_anchor = MSO_ANCHOR.MIDDLE
 
     #TRACK VARIABLE
-    create_text(slide, left=170, top=170, width=0, height=20, text=air_temp_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
-    create_text(slide, left=525, top=170, width=0, height=20, text=track_temp_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
-    create_text(slide, left=910, top=170, width=0, height=20, text=humidity_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    create_text(slide, left=170, top=170, width=0, height=20, text=air_temp_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+    create_text(slide, left=525, top=170, width=0, height=20, text=track_temp_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+    create_text(slide, left=910, top=170, width=0, height=20, text=humidity_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
     
     #DRIVERS VARIABLE
-    create_text(slide, left=310, top=240, width=0, height=20, text=driver_1_name, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
-    create_text(slide, left=770, top=240, width=0, height=20, text=driver_2_name, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
-    create_text(slide, left=310, top=290, width=0, height=20, text=fastest_lap_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
-    create_text(slide, left=770, top=290, width=0, height=20, text=fastest_lap_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    create_text(slide, left=310, top=240, width=0, height=20, text=driver_1_name, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+    create_text(slide, left=770, top=240, width=0, height=20, text=driver_2_name, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+    create_text(slide, left=310, top=290, width=0, height=20, text=fastest_lap_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+    create_text(slide, left=770, top=290, width=0, height=20, text=fastest_lap_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
 
 prs.save(parent_file/ report_folder / f'{race_number}_{free_practice_session}.pptx')
 

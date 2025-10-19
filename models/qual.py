@@ -1,6 +1,3 @@
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-import matplotlib.colors as mcolors
 from pathlib import Path
 import subprocess
 from pdf2image import convert_from_path
