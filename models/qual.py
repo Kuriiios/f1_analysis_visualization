@@ -2,28 +2,19 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import matplotlib.colors as mcolors
 from pathlib import Path
-from instagrapi import Client
 import subprocess
 from pdf2image import convert_from_path
+
+from utils.utils import *
 
 import numpy as np 
 import pandas as pd
 
-from matplotlib import colormaps
-from chromato.spaces import convert
-
 import fastf1
-import fastf1.plotting
-from fastf1 import utils
 
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_CONNECTOR
-from pptx.enum.shapes import MSO_SHAPE
-from pptx.oxml.xmlchemy import OxmlElement
-from pptx.enum.text import PP_ALIGN
-from pptx.enum.text import MSO_AUTO_SIZE
 
 import os
 import csv
@@ -50,7 +41,6 @@ fastf1.plotting.setup_mpl(mpl_timedelta_support=True, misc_mpl_mods=False,
 year = int(input('Year ? '))
 race_number = int(input('Race Number ? (1-24) '))
 race_session = input('Session ? (Q, SQ) ')
-post_option = input('Do you want to post it immediatly ? (Y/N) ')
 
 session = fastf1.get_session(year, race_number, race_session)
 session.load()
@@ -88,17 +78,6 @@ def read_credentials(file = parent_file / "data/raw/login.txt"):
             creds[key] = value
     return creds
 
-def SubElement(parent, tagname, **kwargs):
-        element = OxmlElement(tagname)
-        element.attrib.update(kwargs)
-        parent.append(element)
-        return element
-
-def _set_shape_transparency(shape, alpha):
-    ts = shape.fill._xPr.solidFill
-    sF = ts.get_or_change_to_srgbClr()
-    sE = SubElement(sF, 'a:alpha', val=str(alpha))
-    
 def Hex_RGB(ip):
     return tuple(int(ip[i+1:i+3],16) for i in (0, 2, 4))
 
@@ -278,41 +257,10 @@ for subsession in [q1, q2, q3]:
                 fill.fore_color.rgb = RGBColor(21, 21, 30)
                 
                 #TRANSPARANT LAYER
-                shapes = slide.shapes
-                shape = shapes.add_shape(MSO_SHAPE.RECTANGLE, left=Pt(40), top=Pt(130), width=Pt(300), height=Pt(435))
-                shape.line.fill.background()
-                shapeFill = shape.fill
-                shapeFill.solid()
-                shapeColour = shapeFill.fore_color
-                shapeColour.rgb = RGBColor(team_color[0], team_color[1], team_color[2])
-                _set_shape_transparency(shape,15000)
-                
-                shapes = slide.shapes
-                shape = shapes.add_shape(MSO_SHAPE.RECTANGLE, left=Pt(340), top=Pt(385), width=Pt(200), height=Pt(180))
-                shape.line.fill.background()
-                shapeFill = shape.fill
-                shapeFill.solid()
-                shapeColour = shapeFill.fore_color
-                shapeColour.rgb = RGBColor(team_color[0], team_color[1], team_color[2])
-                _set_shape_transparency(shape,15000)
-                
-                shapes = slide.shapes
-                shape = shapes.add_shape(MSO_SHAPE.RECTANGLE, left=Pt(740), top=Pt(130), width=Pt(300), height=Pt(435))
-                shape.line.fill.background()
-                shapeFill = shape.fill
-                shapeFill.solid()
-                shapeColour = shapeFill.fore_color
-                shapeColour.rgb = RGBColor(team_color_2[0], team_color_2[1], team_color_2[2])
-                _set_shape_transparency(shape,15000)
-                
-                shapes = slide.shapes
-                shape = shapes.add_shape(MSO_SHAPE.RECTANGLE, left=Pt(540), top=Pt(385), width=Pt(200), height=Pt(180))
-                shape.line.fill.background()
-                shapeFill = shape.fill
-                shapeFill.solid()
-                shapeColour = shapeFill.fore_color
-                shapeColour.rgb = RGBColor(team_color_2[0], team_color_2[1], team_color_2[2])
-                _set_shape_transparency(shape,15000)
+                create_transparant_layer(slide, left=40, top=130, width=300, height=435, red=team_color[0], green=team_color[1], blue=team_color[2])
+                create_transparant_layer(slide, left=340, top=385, width=200, height=180, red=team_color[0], green=team_color[1], blue=team_color[2])
+                create_transparant_layer(slide, left=740, top=130, width=300, height=435, red=team_color_2[0], green=team_color_2[1], blue=team_color_2[2])
+                create_transparant_layer(slide, left=540, top=385, width=200, height=180, red=team_color_2[0], green=team_color_2[1], blue=team_color_2[2])
                 
                 #HEADER
                 f1_logo = parent_file / 'data/external/team_logos/F1_75_Logo.png'
@@ -330,35 +278,11 @@ for subsession in [q1, q2, q3]:
                 pic = slide.shapes.add_picture(str(team_logo), Pt(820), Pt(25), height= Pt(100), width=Pt(200))
                 
                 #STRUCTURE
-                line1=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(40), Pt(130), Pt(1000), Pt(2))
-                line1.line.fill.background()
-                fill = line1.fill
-                fill.solid()
-                fill.fore_color.rgb = RGBColor(244, 244, 244)
-
-                line2=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(40), Pt(565), Pt(1000), Pt(2))
-                line2.line.fill.background()
-                fill = line2.fill
-                fill.solid()
-                fill.fore_color.rgb = RGBColor(244, 244, 244)
-
-                line3=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(40), Pt(785), Pt(1000), Pt(2))
-                line3.line.fill.background()
-                fill = line3.fill
-                fill.solid()
-                fill.fore_color.rgb = RGBColor(244, 244, 244)
-
-                line4=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(539), Pt(590), Pt(2), Pt(180))
-                line4.line.fill.background()
-                fill = line4.fill
-                fill.solid()
-                fill.fore_color.rgb = RGBColor(244, 244, 244)
-
-                line5=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(539), Pt(385), Pt(2), Pt(180))
-                line5.line.fill.background()
-                fill = line5.fill
-                fill.solid()
-                fill.fore_color.rgb = RGBColor(244, 244, 244)
+                create_line(slide, left=40, top=130, width=1000, height=2, red=244, green=244, blue=244)
+                create_line(slide, left=40, top=565, width=1000, height=2, red=244, green=244, blue=244)
+                create_line(slide, left=40, top=785, width=1000, height=2, red=244, green=244, blue=244)
+                create_line(slide, left=539, top=590, width=2, height=180, red=244, green=244, blue=244)
+                create_line(slide, left=539, top=385, width=2, height=180, red=244, green=244, blue=244)
 
                 #TRANSPARENT FIGURES
                 transparent_counter = 0
@@ -378,599 +302,85 @@ for subsession in [q1, q2, q3]:
                         team_color_graph = team_color_2
                     lenght_corner_segments = df_corner.iloc[transparent_counter, corner_index]
                     
-                    shapes = slide.shapes
-                    shape = shapes.add_shape(MSO_SHAPE.RECTANGLE, left=Pt(total_lenght_corner_segments), top=Pt(810), width=Pt(lenght_corner_segments), height=Pt(305))
-                    shape.line.fill.background()
-                    shapeFill = shape.fill
-                    shapeFill.solid()
-                    shapeColour = shapeFill.fore_color
-                    shapeColour.rgb = RGBColor(team_color_graph[0], team_color_graph[1], team_color_graph[2])
-                    _set_shape_transparency(shape,15000)
+                    create_transparant_layer(slide, left=total_lenght_corner_segments, top=810, width=lenght_corner_segments, height=305, red=team_color_graph[0], green=team_color_graph[1], blue=team_color_graph[2])
+                    create_transparant_layer(slide, left=total_lenght_corner_segments, top=1150, width=lenght_corner_segments, height=175, red=team_color_graph[0], green=team_color_graph[1], blue=team_color_graph[2])
                     
-                    shapes2 = slide.shapes
-                    shape2 = shapes2.add_shape(MSO_SHAPE.RECTANGLE, left=Pt(total_lenght_corner_segments), top=Pt(1150), width=Pt(lenght_corner_segments), height=Pt(175))
-                    shape2.line.fill.background()
-                    shape2Fill = shape2.fill
-                    shape2Fill.solid()
-                    shape2Colour = shape2Fill.fore_color
-                    shape2Colour.rgb = RGBColor(team_color_graph[0], team_color_graph[1], team_color_graph[2])
-                    _set_shape_transparency(shape2,15000)
                     total_lenght_corner_segments += lenght_corner_segments
 
                     transparent_counter += 1
 
                 #FIGURES
                 pic = slide.shapes.add_picture(image_file=(str(corner_domination)), left=Pt(342), top = Pt(75), height= Pt(395), width=Pt(395))
-
                 pic = slide.shapes.add_picture(image_file=(str(bar_graph_driver_1)), left=Pt(0), top=Pt(565), height= Pt(228), width=Pt(543))
-
                 pic = slide.shapes.add_picture(image_file=(str(bar_graph_driver_2)), left=Pt(523), top= Pt(565), height= Pt(228), width=Pt(543))
-
                 pic = slide.shapes.add_picture(image_file=(str(delta_time)), left=Pt(30), top=Pt(1140), height=Pt(195), width=Pt(1018))
-
                 pic = slide.shapes.add_picture(image_file=(str(speed)), left=Pt(30), top= Pt(798),height=Pt(355), width=Pt(1018))
 
                 #REFERENCES
-                txBox = slide.shapes.add_textbox(left=Pt(70), top= Pt(120), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Driver"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
+                create_text(slide, left=70, top=120, width=0, height=20, text="Driver", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=85, top=205, width=0, height=20, text="Lap Time", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=103, top=290, width=0, height=20, text="Sector 1", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=103, top=375, width=0, height=20, text="Sector 2", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=103, top=460, width=0, height=20, text="Sector 3", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=260, top=290, width=0, height=20, text="Speed Trap 1", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=260, top=375, width=0, height=20, text="Speed Trap 2", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=260, top=460, width=0, height=20, text="Speed Final Line", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=430, top=375, width=0, height=20, text="Gap", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=430, top=460, width=0, height=20, text="Corner Advantage", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=0, top=646, width=0, height=20, text="%LAP TIME", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=270)
+                create_text(slide, left=140, top=550, width=0, height=20, text="FULL THROTTLE", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=145, top=615, width=0, height=20, text="HEAVY BREAKING", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=120, top=685, width=0, height=20, text="CORNERING", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=0, top=935, width=0, height=20, text="SPEED", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=270)
+                create_text(slide, left=0, top=1195, width=0, height=20, text="DELTA TIME", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=270)
                 
-                txBox = slide.shapes.add_textbox(left=Pt(1010), top= Pt(120), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Driver"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(85), top= Pt(205), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Lap Time"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(995), top= Pt(205), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Lap Time"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(103), top= Pt(290), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Sector 1"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(975), top= Pt(290), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Sector 1"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(103), top= Pt(375), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Sector 2"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(975), top= Pt(375), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Sector 2"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(103), top= Pt(460), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Sector 3"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(975), top= Pt(460), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Sector 3"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(260), top= Pt(290), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Speed Trap 1"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(817), top= Pt(290), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Speed Trap 1"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(260), top= Pt(375), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Speed Trap 2"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(817), top= Pt(375), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Speed Trap 2"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(260), top= Pt(460), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Speed Final Line"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(817), top= Pt(460), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Speed Final Line"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(430), top= Pt(375), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Gap"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(640), top= Pt(375), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Gap"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(430), top= Pt(460), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Corner Advantage"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(640), top= Pt(460), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "Corner Advantage"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(0), top= Pt(646), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "%LAP TIME"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-                txBox.rotation = 270
-
-                txBox = slide.shapes.add_textbox(left=Pt(1080), top= Pt(685), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "%LAP TIME"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-                txBox.rotation = 90
-
-                txBox = slide.shapes.add_textbox(left=Pt(140), top= Pt(550), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "FULL THROTTLE"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(940), top= Pt(550), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "FULL THROTTLE"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(145), top= Pt(615), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "HEAVY BREAKING"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(940), top= Pt(615), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "HEAVY BREAKING"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(120), top= Pt(685), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "CORNERING"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(960), top= Pt(685), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "CORNERING"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-
-                txBox = slide.shapes.add_textbox(left=Pt(0), top= Pt(935), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "SPEED"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-                txBox.rotation = 270
-
-                txBox = slide.shapes.add_textbox(left=Pt(1080), top= Pt(960), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "SPEED"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-                txBox.rotation = 90
-
-                txBox = slide.shapes.add_textbox(left=Pt(0), top= Pt(1195), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "DELTA TIME"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-                txBox.rotation = 270
-
-                txBox = slide.shapes.add_textbox(left=Pt(1080), top= Pt(1235), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = "DELTA TIME"
-                run.font.name = 'Formula1 Display Bold'
-                run.font.size = Pt(16)
-                p.font.color.rgb = RGBColor(120, 120, 120)
-                txBox.rotation = 90
+                create_text(slide, left=1010, top=120, width=0, height=20, text="Driver", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=995, top=205, width=0, height=20, text="Lap Time", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=975, top=290, width=0, height=20, text="Sector 1", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=975, top=375, width=0, height=20, text="Sector 2", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=975, top=460, width=0, height=20, text="Sector 3", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=817, top=290, width=0, height=20, text="Speed Trap 1", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=817, top=375, width=0, height=20, text="Speed Trap 2", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=817, top=460, width=0, height=20, text="Speed Final Line", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=640, top=375, width=0, height=20, text="Gap", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=640, top=460, width=0, height=20, text="Corner Advantage", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=1080, top=685, width=0, height=20, text="%LAP TIME", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=90)
+                create_text(slide, left=940, top=550, width=0, height=20, text="FULL THROTTLE", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=940, top=615, width=0, height=20, text="HEAVY BREAKING", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=960, top=615, width=0, height=20, text="CORNERING", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+                create_text(slide, left=1080, top=960, width=0, height=20, text="SPEED", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=90)
+                create_text(slide, left=1080, top=1235, width=0, height=20, text="DELTA TIME", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=90)
 
                 #DRIVER 1 VARIABLE
-
-                txBox = slide.shapes.add_textbox(left=Pt(40), top=Pt(140), width=Pt(500), height=Pt(20))
-                txBox.text_frame.auto_size = MSO_AUTO_SIZE.NONE
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                p.alignment = PP_ALIGN.LEFT
-                run = p.add_run()
-                run.text = name_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-                
-                txBox = slide.shapes.add_textbox(left=Pt(125), top= Pt(225), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = lap_time_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(103), top= Pt(310), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = sector_1_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(103), top= Pt(395), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = sector_2_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)  
-                    
-                txBox = slide.shapes.add_textbox(left=Pt(103), top= Pt(480), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = sector_3_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)  
-                
-                txBox = slide.shapes.add_textbox(left=Pt(260), top= Pt(310), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = speed_trap_1_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255) 
-                
-                txBox = slide.shapes.add_textbox(left=Pt(260), top= Pt(395), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = speed_trap_2_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255) 
-                
-                txBox = slide.shapes.add_textbox(left=Pt(260), top= Pt(480), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = speed_final_line_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255) 
-                
-                txBox = slide.shapes.add_textbox(left=Pt(430), top= Pt(395), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = gap_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255) 
-                
-                txBox = slide.shapes.add_textbox(left=Pt(430), top= Pt(480), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = corner_advantage_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255) 
-                
-                txBox = slide.shapes.add_textbox(left=Pt(500), top= Pt(572), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = throttling_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(24)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255) 
-                
-                txBox = slide.shapes.add_textbox(left=Pt(500), top= Pt(640), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = braking_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(24)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-                
-                txBox = slide.shapes.add_textbox(left=Pt(500), top= Pt(705), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = cornering_driver_1
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(24)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
+                create_text(slide, left=40, top=140, width=300, height=20, text=name_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=125, top=225, width=0, height=20, text=lap_time_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=103, top=310, width=0, height=20, text=sector_1_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=103, top=395, width=0, height=20, text=sector_2_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=103, top=480, width=0, height=20, text=sector_3_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=260, top=310, width=0, height=20, text=speed_trap_1_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=260, top=395, width=0, height=20, text=speed_trap_2_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=260, top=480, width=0, height=20, text=speed_final_line_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=430, top=395, width=0, height=20, text=gap_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=430, top=480, width=0, height=20, text=corner_advantage_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=500, top=572, width=0, height=20, text=throttling_driver_1, font_name="Formula1 Display Regular", font_size=24, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=500, top=640, width=0, height=20, text=braking_driver_1, font_name="Formula1 Display Regular", font_size=24, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
+                create_text(slide, left=500, top=705, width=0, height=20, text=cornering_driver_1, font_name="Formula1 Display Regular", font_size=24, bold=True, red=255, green=255, blue=255, align="left", rotation=0)
                 
                 #DRIVER 2 VARIABLE
-                txBox = slide.shapes.add_textbox(left=Pt(745), top= Pt(140), width=Pt(300), height=Pt(20))
-                txBox.text_frame.auto_size = MSO_AUTO_SIZE.NONE
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                p.alignment = PP_ALIGN.RIGHT
-                run = p.add_run()
-                run.text = name_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
+                create_text(slide, left=745, top=140, width=300, height=20, text=name_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=950, top=225, width=0, height=20, text=lap_time_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=975, top=310, width=0, height=20, text=sector_1_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=975, top=395, width=0, height=20, text=sector_2_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=975, top=480, width=0, height=20, text=sector_3_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=817, top=310, width=0, height=20, text=speed_trap_1_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=817, top=395, width=0, height=20, text=speed_trap_2_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=817, top=480, width=0, height=20, text=speed_final_line_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=640, top=395, width=0, height=20, text=gap_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=640, top=480, width=0, height=20, text=corner_advantage_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=580, top=572, width=0, height=20, text=throttling_driver_2, font_name="Formula1 Display Regular", font_size=24, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=580, top=640, width=0, height=20, text=braking_driver_2, font_name="Formula1 Display Regular", font_size=24, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
+                create_text(slide, left=580, top=705, width=0, height=20, text=cornering_driver_2, font_name="Formula1 Display Regular", font_size=24, bold=True, red=255, green=255, blue=255, align="right", rotation=0)
 
-                txBox = slide.shapes.add_textbox(left=Pt(950), top= Pt(225), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = lap_time_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(975), top= Pt(310), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = sector_1_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(975), top= Pt(395), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = sector_2_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(975), top= Pt(480), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = sector_3_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(817), top= Pt(310), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = speed_trap_1_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(817), top= Pt(395), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = speed_trap_2_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(817), top= Pt(480), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = speed_final_line_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(640), top= Pt(395), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = gap_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(640), top= Pt(480), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = corner_advantage_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(30)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(580), top= Pt(572), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = throttling_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(24)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(580), top= Pt(640), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = braking_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(24)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
-
-                txBox = slide.shapes.add_textbox(left=Pt(580), top= Pt(705), width=Pt(0), height=Pt(20))
-                tf = txBox.text_frame
-                p = tf.add_paragraph()
-                run = p.add_run()
-                run.text = cornering_driver_2
-                run.font.name = 'Formula1 Display Regular'
-                run.font.size = Pt(24)
-                run.font.bold = True
-                run.font.color.rgb = RGBColor(255, 255, 255)
                 counter +=1
             except:
                 xml_slides = prs.slides._sldIdLst  
@@ -1005,28 +415,3 @@ for file_path in report_folder.iterdir():
             images[i].save(file_path.stem + str(i) +'.jpeg', 'JPEG')
         file_path.unlink()
         file_path_pdf.unlink()
-
-
-caption =  ( f"🇦🇺 Round {session.event.RoundNumber} - {session.event.EventName} ({session.event.Country})\n"
-            f"📍 {session.event.Location}\n"
-            f"🏁 {session_type(race_session)} Session Recap\n"
-            f"———\n"
-            f"Stay tuned for full weekend coverage of the {session.event.OfficialEventName}!\n"
-            f"#F1 #Formula1 #F1{session.event.RoundNumber} #F1{session.event.Country.replace(' ', '')} #F1Weekend #F1Quali #F1Race #F1Team")
-
-if post_option == 'Y':
-    creds = read_credentials()
-    cl = Client()
-    cl.login(creds['username'], creds['password'])
-
-    for i in range(3):
-        image_folder = parent_file / f"reports/{session.event.RoundNumber}_{session.event.EventName}_{year}/{session.event.RoundNumber}_Q{str(i+1)}_{session_type(race_session)}"
-        image_files = []
-        for report in os.listdir(image_folder):
-            image_files.append(os.path.join(image_folder, report))
-
-        cl.album_upload(
-            paths=image_files,
-            caption=caption
-            )
-        cl.delay_range = [1, 3]

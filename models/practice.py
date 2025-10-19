@@ -5,11 +5,12 @@ from pptx.enum.shapes import MSO_CONNECTOR
 from pptx.enum.text import MSO_ANCHOR
 from pptx.enum.text import PP_ALIGN
 
-from instagrapi import Client
 from pathlib import Path
 from pdf2image import convert_from_path
 import subprocess
 import sys
+from utils.utils import create_line
+from utils.utils import create_text
 
 import fastf1
 import fastf1.plotting
@@ -40,7 +41,6 @@ ergast = Ergast()
 year = int(input('Year ? '))
 race_number = int(input('Race Number ? (1-24) '))
 free_practice_session = 'FP' + (input('Practice Session ? (1-3) '))
-post_option = input('Do you want to post it immediatly ? (Y/N) ')
 
 event = fastf1.get_event(year, race_number)
 
@@ -203,7 +203,7 @@ for idx, team in enumerate(teams):
        
     race_name = str(practice_session)[20:]
     
-    team_logo = f'/home/kurios/Documents/f1_analysis/data/external/team_logos/{team}.png'
+    team_logo = f'/home/kurios/Documents/f1_analysis_visualization/data/external/team_logos/{team}.png'
     
     prs.slide_width = Pt(1080)
     prs.slide_height = Pt(1350)
@@ -217,7 +217,7 @@ for idx, team in enumerate(teams):
     fill.fore_color.rgb = RGBColor(21, 21, 30)
 
     #HEADER
-    f1_logo = '/home/kurios/Documents/f1_analysis/data/external/team_logos/F1_75_Logo.png'
+    f1_logo = '/home/kurios/Documents/f1_analysis_visualization/data/external/team_logos/F1_75_Logo.png'
     pic = slide.shapes.add_picture(f1_logo, Pt(40), Pt(54), height=Pt(38), width= Pt(200))
 
     title = slide.shapes.title
@@ -233,141 +233,26 @@ for idx, team in enumerate(teams):
     pic = slide.shapes.add_picture(team_logo, Pt(820), Pt(25), height= Pt(100), width=Pt(200))
 
     #STRUCTURE
-    line1=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(40), Pt(150), Pt(1000), Pt(2))
-    line1.line.fill.background()
-    fill = line1.fill
-    fill.solid()
-    fill.fore_color.rgb = RGBColor(244, 244, 244)
-
-    line2=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(40), Pt(250), Pt(1000), Pt(2))
-    line2.line.fill.background()
-    fill = line2.fill
-    fill.solid()
-    fill.fore_color.rgb = RGBColor(244, 244, 244)
-
-    line4=slide.shapes.add_shape(MSO_CONNECTOR.STRAIGHT, Pt(539), Pt(250), Pt(2), Pt(1000))
-    line4.line.fill.background()
-    fill = line4.fill
-    fill.solid()
-    fill.fore_color.rgb = RGBColor(244, 244, 244)
+    create_line(slide, left=40, top=150, width=1000, height=2, red=244, green=244, blue=244)
+    create_line(slide, left=40, top=250, width=1000, height=2, red=244, green=244, blue=244)
+    create_line(slide, left=539, top=250, width=2, height=1000, red=244, green=244, blue=244)
 
     #REFERENCES
-    txBox = slide.shapes.add_textbox(left=Pt(170), top= Pt(150), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Air Temp Range"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-    
-    txBox = slide.shapes.add_textbox(left=Pt(525), top= Pt(150), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Track Temp Range"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
+    create_text(slide, left=170, top=150, width=0, height=20, text="Air Temp Range", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=525, top=150, width=0, height=20, text="Track Temp Range", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=910, top=150, width=0, height=20, text="Humidity Range", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
 
-    txBox = slide.shapes.add_textbox(left=Pt(910), top= Pt(150), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Humidity Range"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
+    create_text(slide, left=70, top=250, width=0, height=20, text="Driver", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=95, top=300, width=0, height=20, text="Fastest Lap", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=125, top=400, width=0, height=20, text="Laps", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=275, top=400, width=0, height=20, text="Estimation Protocol", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=425, top=400, width=0, height=20, text="Lap Times", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
 
-    txBox = slide.shapes.add_textbox(left=Pt(70), top= Pt(250), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Driver"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-    
-    txBox = slide.shapes.add_textbox(left=Pt(1010), top= Pt(250), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Driver"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-
-    txBox = slide.shapes.add_textbox(left=Pt(95), top= Pt(300), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Fastest Lap"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-    
-    txBox = slide.shapes.add_textbox(left=Pt(985), top= Pt(300), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Fastest Lap"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-
-    txBox = slide.shapes.add_textbox(left=Pt(125), top= Pt(400), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Laps"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-
-    txBox = slide.shapes.add_textbox(left=Pt(275), top= Pt(400), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Estimation Protocol"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-
-    txBox = slide.shapes.add_textbox(left=Pt(425), top= Pt(400), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Lap Times"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-    
-    txBox = slide.shapes.add_textbox(left=Pt(665), top= Pt(400), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Laps"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-
-    txBox = slide.shapes.add_textbox(left=Pt(815), top= Pt(400), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Estimation Protocol"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
-
-    txBox = slide.shapes.add_textbox(left=Pt(965), top= Pt(400), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = "Lap Times"
-    run.font.name = 'Formula1 Display Bold'
-    run.font.size = Pt(16)
-    p.font.color.rgb = RGBColor(120, 120, 120)
+    create_text(slide, left=1010, top=250, width=0, height=20, text="Driver", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=985, top=300, width=0, height=20, text="Fastest Lap", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=665, top=400, width=0, height=20, text="Laps", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=815, top=400, width=0, height=20, text="Estimation Protocol", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
+    create_text(slide, left=965, top=400, width=0, height=20, text="Lap Times", font_name="Formula1 Display Bold", font_size=16, bold=False, red=120, green=120, blue=120, align="right", rotation=0)
 
     if data_driver_1_len != 0:
         shape = slide.shapes.add_table(data_driver_1_len, 3,left=Pt(40), top= Pt(450), width=Pt(460), height=Pt(800))
@@ -419,14 +304,13 @@ for idx, team in enumerate(teams):
             p = text_frame.add_paragraph()
             run = p.add_run()
             run.text = f'Mode:{engine_mode} \n{simulation}'
-            
             run.font.name = 'Formula1 Display Regular'
             run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
-            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
 
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
             cell = table.cell(i, 2)
             fill = cell.fill
             fill.solid()
@@ -439,12 +323,12 @@ for idx, team in enumerate(teams):
             p = text_frame.add_paragraph()
             run = p.add_run()
             run.text = f'Best : {str(data_driver_1.fastest_laptime.iloc[i])[11:-3]}\nAvg : {str(data_driver_1.avg_quick_laptime.iloc[i])[11:-3]}   '
-            
             run.font.name = 'Formula1 Display Regular'
             run.font.size = Pt(16)
             run.font.bold = True
             run.font.color.rgb = RGBColor(255, 255, 255)
             p.alignment = PP_ALIGN.CENTER
+            
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
 
     else:
@@ -521,7 +405,6 @@ for idx, team in enumerate(teams):
             p = text_frame.add_paragraph()
             run = p.add_run()
             run.text = f'Mode:{engine_mode} \n{simulation}'
-            
             run.font.name = 'Formula1 Display Regular'
             run.font.size = Pt(16)
             run.font.bold = True
@@ -573,81 +456,15 @@ for idx, team in enumerate(teams):
         cell.vertical_anchor = MSO_ANCHOR.MIDDLE
 
     #TRACK VARIABLE
-    txBox = slide.shapes.add_textbox(left=Pt(170), top=Pt(170), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    p.alignment = PP_ALIGN.LEFT
-    run = p.add_run()
-    run.text = air_temp_range
-    run.font.name = 'Formula1 Display Regular'
-    run.font.size = Pt(30)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(255, 255, 255)
-
-    txBox = slide.shapes.add_textbox(left=Pt(525), top= Pt(170), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = track_temp_range
-    run.font.name = 'Formula1 Display Regular'
-    run.font.size = Pt(30)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(255, 255, 255)
-
-    txBox = slide.shapes.add_textbox(left=Pt(910), top= Pt(170), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    run = p.add_run()
-    run.text = humidity_range
-    run.font.name = 'Formula1 Display Regular'
-    run.font.size = Pt(30)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(255, 255, 255)
-
+    create_text(slide, left=170, top=170, width=0, height=20, text=air_temp_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    create_text(slide, left=525, top=170, width=0, height=20, text=track_temp_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    create_text(slide, left=910, top=170, width=0, height=20, text=humidity_range, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    
     #DRIVERS VARIABLE
-    txBox = slide.shapes.add_textbox(left=Pt(310), top=Pt(240), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    p.alignment = PP_ALIGN.LEFT
-    run = p.add_run()
-    run.text = driver_1_name
-    run.font.name = 'Formula1 Display Regular'
-    run.font.size = Pt(30)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(255, 255, 255)
-
-    txBox = slide.shapes.add_textbox(left=Pt(770), top=Pt(240), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    p.alignment = PP_ALIGN.LEFT
-    run = p.add_run()
-    run.text = driver_2_name
-    run.font.name = 'Formula1 Display Regular'
-    run.font.size = Pt(30)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(255, 255, 255)
-
-    txBox = slide.shapes.add_textbox(left=Pt(310), top=Pt(290), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    p.alignment = PP_ALIGN.LEFT
-    run = p.add_run()
-    run.text = fastest_lap_driver_1
-    run.font.name = 'Formula1 Display Regular'
-    run.font.size = Pt(30)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(255, 255, 255)
-
-    txBox = slide.shapes.add_textbox(left=Pt(770), top=Pt(290), width=Pt(0), height=Pt(20))
-    tf = txBox.text_frame
-    p = tf.add_paragraph()
-    p.alignment = PP_ALIGN.LEFT
-    run = p.add_run()
-    run.text = fastest_lap_driver_2
-    run.font.name = 'Formula1 Display Regular'
-    run.font.size = Pt(30)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(255, 255, 255)
+    create_text(slide, left=310, top=240, width=0, height=20, text=driver_1_name, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    create_text(slide, left=770, top=240, width=0, height=20, text=driver_2_name, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    create_text(slide, left=310, top=290, width=0, height=20, text=fastest_lap_driver_1, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
+    create_text(slide, left=770, top=290, width=0, height=20, text=fastest_lap_driver_2, font_name="Formula1 Display Regular", font_size=30, bold=True, red=255, green=255, blue=255, align="left")
 
 prs.save(parent_file/ report_folder / f'{race_number}_{free_practice_session}.pptx')
 
@@ -676,25 +493,3 @@ for file_path in report_folder.iterdir():
             images[i].save(file_path.stem + str(i) +'.jpeg', 'JPEG')
         file_path.unlink()
         file_path_pdf.unlink()
-
-if post_option == 'Y':
-    caption = ( f"Round {practice_session.event.RoundNumber} - {practice_session.event.EventName} ({practice_session.event.Country})\n"
-                f"📍 {practice_session.event.Location}\n"
-                f"🛠️ {practice_session} Session Recap\n" 
-                f"———\n"
-                f"The teams are gathering crucial data and fine-tuning their setups. Stay tuned for more updates from the {practice_session.event.OfficialEventName}!\n"
-                f"#F1 #Formula1 #F1{practice_session.event.RoundNumber} #F1{practice_session.event.Country.replace(' ', '')} #F1Weekend #FreePractice #F1Practice #DataGathering #Setup")
-
-    creds = read_credentials()
-    cl = Client()
-    cl.login(creds['username'], creds['password'])
-
-    image_folder = parent_file / f"reports/{practice_session.event.RoundNumber}_{practice_session.event.EventName}_{year}/{practice_session.event.RoundNumber}_{free_practice_session}"
-    image_files = []
-    for report in os.listdir(image_folder):
-        image_files.append(os.path.join(image_folder, report))
-
-    cl.album_upload(
-        paths=image_files,
-        caption=caption
-        )
