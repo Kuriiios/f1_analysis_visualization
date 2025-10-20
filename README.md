@@ -1,86 +1,156 @@
-# f1__analysis
+🏎️ F1 Report Suite — Automated Session & Season Analysis Generator
 
-## Analysis of the 2025 Formula 1 Season: Teammate Qualifying Performance
+This repository hosts the code for an automated Formula 1 Report Suite, built entirely in Python and powered by FastF1 and python-pptx.
+The suite’s goal is to generate detailed analytical reports and visual JPEG cards for every aspect of an F1 weekend and beyond — from Free Practice to full Quarter-Season summaries.
 
-This project provides an in-depth analysis of the 2025 Formula 1 season's qualifying sessions (Q1, Q2, and Q3). The primary focus is on comparing the performance of teammate drivers, identifying key differences in their driving across various track sections and telemetry data. By leveraging the `fastf1` library, this analysis generates insightful visualizations and data reports to highlight driver strengths and weaknesses during qualifying.
+Each module automatically fetches, processes, visualizes, and formats telemetry and timing data into professional-grade reports in .pptx, .pdf, and .jpeg formats, combining data precision with clean, F1-style design.
 
-## Qualifying Teammate Performance Analysis
-This project provides a detailed comparison of teammate performance during the 2025 Formula 1 season. The analysis is divided into two main parts: Qualifying and Race.
+🚨 PROJECT STATUS: MULTI-MODULE PROTOTYPE — ACTIVE DEVELOPMENT 🚧
 
-**Qualifying Analysis**
+✅ Prototype Status: Validated Across Multiple Report Types
 
-The qualifying analysis focuses on driver performance during qualifying sessions (Q1, Q2, and Q3). Key aspects include:
+The architecture and generation logic have been validated across all five modules, confirming that the system can automatically produce accurate and visually consistent reports for each supported session type.
 
-* **Lap Time and Sector Time Comparison**: Tabular presentation of fastest lap times and sector times for teammates in each qualifying session.
-* **Delta Time Plots**: Visualizing the time difference between teammates across the entire lap to pinpoint where time is gained or lost.
-* **Speed Profile Comparison**: Comparing the speed of each teammate throughout their fastest lap, highlighting differences in straights and corners.
-* **Corner Domination Analysis**: Identifying which driver has a time advantage in specific corners based on delta time analysis.
-* **Throttle, Brake, and Cornering Profiles**: Comparing the percentage of lap time spent on full throttle, braking, and cornering for each driver.
-* **Speed Trap Analysis:** Comparing the maximum speeds achieved by teammates at designated speed trap locations.
+🧩 Available Report Modules
+Report Type	Script	Description
+🧠 Practice Report Generator	practice_generator.py	Analyzes protocols, pace evolution, tyre degradation, and stint consistency during FP1–FP3.
+⚡ Qualifying Report Generator	qualifying_generator.py	Focuses on sector performance, track evolution, lap deltas, and Q1–Q3 time comparisons.
+🏁 Race Report Generator	race_generator.py	Produces full race summaries with lap charts, strategy breakdowns, and teammate comparisons.
+⚔️ Head-to-Head Report Generator	head2head_generator.py	Compares two drivers across sessions or events — highlights lap pace, race craft, and performance trends.
+📊 Quarter-Season Report Generator	quarter_season_generator.py	Aggregates team and driver stats over multiple rounds for medium-term performance insights.
+Each generator produces:
 
-These analyses are conducted for each team in each qualifying session where both drivers set a valid lap time.  The results are saved as individual PNG plots and aggregated into CSV files, which are then compiled into comprehensive JPEG reports.
+.pptx PowerPoint reports
 
-**Race Analysis**
+.pdf documents (auto-converted)
 
-The race analysis focuses on driver performance and strategy during the race. Key aspects include:
-* **Lap Time Comparison**: Comparing lap times of both drivers.
-* **Lap Time Scatterplot**: Showing lap times for each driver, including tyre compound information.
-* **Pace Comparison**: Comparing the pace of each driver.
-* **Tyre Strategy**: Visualizing the tyre compounds used by each driver during the race.
-* **Pit Stop Time**: Comparing pit stop times for each driver.
-* **Fastest Driver Per Lap**: Identifying the faster driver on each lap.
-* **Lap Time Distribution**: Analyzing the distribution of lap times for each driver.
-* **Final Gap**: Calculating the time difference between teammates at the end of the race.
-* **Driver Information**: Providing key race information for each driver, including final position, gap to teammate, race time, average lap time, IQR of lap times, and pit stop information.
+.jpeg race cards suitable for sharing or media embedding
 
-The results are saved as individual PNG plots and aggregated into CSV files, which are then compiled into comprehensive JPEG reports.
+🚀 Getting Started
+Prerequisites
 
-## Key Python Modules and Functions
+You’ll need Python ≥ 3.9 and the following packages:
+System Requirements
 
-The core logic of the analysis is implemented in the Python scripts within the `f1_analysis_ccds` directory:
+LibreOffice (lowriter) – for .pptx → .pdf conversion
 
-* **`features.py`**: Contains functions to engineer features such as identifying turns (`add_turn`) and determining the faster driver in corner segments (`add_faster_driver`).
-* **`utils/.../plots.py`**: Houses the visualization functions:
-    * `show_driver_quali_dif_per_lap()`: Generates delta time plots.
-    * `show_fastest_lap_per_quali_session()`: Creates speed profile comparisons.
-    * `show_corner_advantage_per_quali_session()`: Visualizes corner advantages on the track map.
-    * `create_bar_graph_per_driver()`: Generates bar charts for throttle, brake, and cornering percentages.
-* **Main script (in the models folder)**: Orchestrates the analysis workflow:
-    * Takes user input for the year, race number, and session type (Q or SQ).
-    * Loads session data using `fastf1`.
-    * Iterates through teams and qualifying sessions.
-    * Calls functions from `plots.py` to generate visualizations.
-    * Saves plots as PNG files in the `figures` directory.
-    * Creates CSV files containing lap information and delta time data in the `csv` directory.
-    * Generates PowerPoint reports (`.pptx` files) summarizing the analysis for each qualifying session, incorporating the generated plots and data.
-* **Helper Functions**: Several utility functions (`read_credentials`, `rotate`, `get_corner_dist_for_drivers`, `convert_for_cmap`, `SubElement`, `_set_shape_transparency`, `Hex_RGB`) support the main analysis and presentation processes.
+Poppler – for .pdf → .jpeg conversion via pdf2image
 
-## Data Sources
+⚙️ Workflow Overview
 
-The primary data source is the `fastf1` Python library, which provides access to Formula 1 data. Additional data sources include:
+Each generator follows a common data pipeline:
 
-* **`data/external/team_logos/`**: For team logos in the PowerPoint reports.
-* **`data/raw/second_color.csv`**: Maps F1 teams to secondary colors for visualizations.
-* **`data/raw/login.txt`**: (Not intended for public repository) Contains credentials for potential Instagram posting functionality.
+1. Session Selection
+Prompts for the year, race round, and session type (FP1, Q, R, or S).
 
-## Output and Reporting
+2. Data Retrieval
+Fetches all session telemetry via FastF1, using caching for faster re-runs.
 
-The results of the analysis are presented through:
+3. Analysis Computation
+Custom logic modules (utils/race/lap_info.py, utils/race/plots.py) handle:
 
-1.  **PNG Visualizations**: A collection of plots for each team and qualifying session, including delta time graphs, speed profiles, corner dominance maps, and throttle/brake/cornering bar charts.
-2.  **CSV Data**: Detailed lap information and delta time data are saved in CSV files for further inspection or use in other tools.
-3.  **JPEG Reports**: Automatically generated `.jpeg` reports for each qualifying session. Each report focuses on a specific team and includes:
-    * Team logo and driver names.
-    * Summary of lap and sector time differences.
-    * Delta time plot.
-    * Speed profile comparison.
-    * Corner domination visualization.
-    * Throttle, brake, and cornering bar charts.
+.Lap filtering and correction
 
-## Potential Future Enhancements
+.Pit stop detection
 
-* Integration of more detailed telemetry data (e.g., steering angle, gear changes, DRS usage).
-* Development of predictive models for qualifying performance.
-* Extension of the analysis to practice sessions, including best tyre strategy and prediction based on previous data.
+.Pace delta calculation
 
-This project provides a robust framework for analyzing Formula 1 qualifying performance and offers numerous avenues for future expansion and more sophisticated analysis.
+.Session bests and outliers
+
+4. Figure Generation
+Matplotlib is used to create race-style charts for lap time trends, pace comparisons, and tyre usage.
+
+5. Report Assembly
+Using python-pptx, each report slide is dynamically built with:
+
+.Team branding and logos
+
+.Driver stats and metrics
+
+.F1-style visual hierarchy and layout
+
+6. Conversion & Export
+The system converts .pptx → .pdf → .jpeg via LibreOffice and pdf2image, generating clean, high-resolution cards.
+
+📂 Folder Structure
+
+f1_analysis_visualization/
+│
+├── data/
+│   ├── raw/                    # Login, team colors, raw reference data
+│   ├── processed/              # CSV exports
+│   └── external/team_logos/
+│
+├── figures/                    # Session charts
+├── reports/                    # Generated .pptx/.pdf/.jpeg outputs
+├── cache_folder/               # FastF1 cache
+│
+├── models_auto/                # Trying to automate the process
+├── models/
+│   ├── utils/
+│   │   ├── practice
+│   │   │   ├── lap_info.py
+│   │   │   └── plots.py
+│   │   ├── qual
+│   │   │   ├── lap_info.py
+│   │   │   └── plots.py
+│   │   ├── race
+│   │   │   ├── lap_info.py
+│   │   │   └── plots.py
+│   │   ├── utils.py
+│   │   └── __init__.py
+│   │
+│   ├── practice_generator.py
+│   ├── qualifying_generator.py
+│   ├── race_generator.py
+│   ├── head2head_generator.py
+│   └── quarter_season_generator.py
+│
+├── LICENSE
+├── README.md
+└── requirements.txt
+
+
+📈 Example Usage
+
+python race_generator.py
+
+Prompted workflow:
+
+Year ? 2025
+Race Number ? (1-24) 6
+Session ? (R, S) R
+
+Output Example:
+
+reports/
+└── 06_Monaco_GP_2025/
+    └── 06_Race/
+        ├── 06_Race0.jpeg
+        ├── 06_Race1.jpeg
+
+🔍 Analytical Focus by Module
+
+Module	Focus Area
+Practice	Pace evolution, stint analysis, fuel load correction
+Qualifying	Sector deltas, Q session comparison, theoretical best laps
+Race	Tyre strategy, driver comparison, pit stop breakdowns
+Head-to-Head	Driver-vs-driver lap-by-lap performance
+Quarter-Season	Multi-event averages, trends, cumulative scoring
+
+🌈 Visual Design Highlights
+
+Official F1 color palette per team
+
+Consistent Formula1 Display typography
+
+Transparent overlay blocks for clean data presentation
+
+Auto-scaled charts and figure placement
+
+High-resolution JPEG exports for social sharing
+
+👨‍💻 Author
+
+Cyril Leconte 📍 Créteil, France
+📧 cyril.leconte@proton.me
