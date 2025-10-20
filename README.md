@@ -16,7 +16,6 @@ Report Type	Script	Description
 🧠 Practice Report Generator	practice_generator.py	Analyzes protocols, pace evolution, tyre degradation, and stint consistency during FP1–FP3.
 ⚡ Qualifying Report Generator	qualifying_generator.py	Focuses on sector performance, track evolution, lap deltas, and Q1–Q3 time comparisons.
 🏁 Race Report Generator	race_generator.py	Produces full race summaries with lap charts, strategy breakdowns, and teammate comparisons.
-⚔️ Head-to-Head Report Generator	head2head_generator.py	Compares two drivers across sessions or events — highlights lap pace, race craft, and performance trends.
 📊 Quarter-Season Report Generator	quarter_season_generator.py	Aggregates team and driver stats over multiple rounds for medium-term performance insights.
 Each generator produces:
 

@@ -12,11 +12,6 @@ import fastf1.plotting
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_CONNECTOR
-from pptx.enum.shapes import MSO_SHAPE
-from pptx.oxml.xmlchemy import OxmlElement
-from pptx.enum.text import PP_ALIGN
-from pptx.enum.text import MSO_AUTO_SIZE
 
 from pdf2image import convert_from_path
 
@@ -31,7 +26,6 @@ race_to = int(input("To ? "))
 report_folder = parent_file / 'reports'
 
 def parse_laptime_str(lap_string):
-    """Parses a lap time string (MM:SS.fff) into a timedelta object."""
     if isinstance(lap_string, str) and ':' in lap_string and '.' in lap_string:
         minutes, rest = lap_string.split(':')
         seconds, milliseconds = rest.split('.')
@@ -49,13 +43,11 @@ threshold_multiplier = 1.5
 
 qual_sessions = range(1, 4)
 
-
 for race_number in race_years:
     for race_session in ('S', 'R', 'SQ', 'Q'):
         try:
             session = fastf1.get_session(year, race_number, race_session)
             session.load()
-            print(session)
             teams = fastf1.plotting.list_team_names(session)
         except:
             continue
@@ -73,7 +65,6 @@ for race_number in race_years:
                 num_rows = len(arr)
 
                 temp_recap = {}
-                print(arr)
                 for i in range(num_rows):
                     
                     name_driver_1 = arr['driver_1_name'][i]
@@ -277,9 +268,9 @@ compared_teams = set()
 
 for race_number in race_years:
 
-    for race_session in ('R', 'S', 'Q', 'SQ'):  # Iterate through sessions
+    for race_session in ('R', 'S', 'Q', 'SQ'):
         try :
-            session = fastf1.get_session(year, race_number, race_session) # session is already defined in the main loop, but it's needed here as well.
+            session = fastf1.get_session(year, race_number, race_session)
             session.load()
             teams = fastf1.plotting.list_team_names(session)
 
@@ -344,7 +335,7 @@ for race_number in race_years:
                         title = slide.shapes.title
                         title.top = Pt(26)
                         title.left = Pt(200)
-                        title.text = f'Recap for  from race {first_race} to {last_race}'
+                        title.text = f'Recap for  from race {race_from} to {last_race}'
                         
                         title.text_frame.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
                         title.text_frame.paragraphs[0].font.size = Pt(38)
