@@ -44,36 +44,29 @@ Prerequisites
     Each generator follows a common data pipeline:
 
 1. Session Selection
-Prompts for the year, race round, and session type (FP1, Q, R, or S).
+    Prompts for the year, race round, and session type (FP1, Q, R, or S).
 
 2. Data Retrieval
-Fetches all session telemetry via FastF1, using caching for faster re-runs.
+    Fetches all session telemetry via FastF1, using caching for faster re-runs.
 
 3. Analysis Computation
-Custom logic modules (utils/race/lap_info.py, utils/race/plots.py) handle:
-
-    .Lap filtering and correction
-    
-    .Pit stop detection
-    
-    .Pace delta calculation
-    
-    .Session bests and outliers
+    Custom logic modules (utils/race/lap_info.py, utils/race/plots.py) handle:    
+        * Lap filtering and correction
+        * Pit stop detection
+        * Pace delta calculation
+        * Session bests and outliers
 
 4. Figure Generation
-Matplotlib is used to create race-style charts for lap time trends, pace comparisons, and tyre usage.
+    Matplotlib is used to create race-style charts for lap time trends, pace comparisons, and tyre usage.
 
 5. Report Assembly
-Using python-pptx, each report slide is dynamically built with:
-    
-    .Team branding and logos
-    
-    .Driver stats and metrics
-    
-    .F1-style visual hierarchy and layout
+    Using python-pptx, each report slide is dynamically built with:
+        * Team branding and logos
+        * Driver stats and metrics
+        *F1-style visual hierarchy and layout
 
 6. Conversion & Export
-The system converts .pptx → .pdf → .jpeg via LibreOffice and pdf2image, generating clean, high-resolution cards.
+    The system converts .pptx → .pdf → .jpeg via LibreOffice and pdf2image, generating clean, high-resolution cards.
 
 ## 📂 Folder Structure
 
@@ -117,7 +110,7 @@ f1_analysis_visualization/
 
 ## 📈 Example Usage
 
-python race_generator.py
+    python race_generator.py
 
 Prompted workflow:
 
@@ -138,11 +131,12 @@ reports/
 ## 🔍 Analytical Focus by Module
 
 Module	Focus Area
-Practice	Pace evolution, stint analysis, fuel load correction
-Qualifying	Sector deltas, Q session comparison, theoretical best laps
-Race	Tyre strategy, driver comparison, pit stop breakdowns
-Head-to-Head	Driver-vs-driver lap-by-lap performance
-Quarter-Season	Multi-event averages, trends, cumulative scoring
+
+* Practice	Pace evolution, stint analysis, fuel load correction
+* Qualifying	Sector deltas, Q session comparison, theoretical best laps
+* Race	Tyre strategy, driver comparison, pit stop breakdowns
+* Head-to-Head	Driver-vs-driver lap-by-lap performance
+* Quarter-Season	Multi-event averages, trends, cumulative scoring
 
 ## 🌈 Visual Design Highlights
 
@@ -159,4 +153,7 @@ Quarter-Season	Multi-event averages, trends, cumulative scoring
 ## 👨‍💻 Author
 
 Cyril Leconte 📍 Créteil, France
+
 📧 cyril.leconte@proton.me
+
+🔗 [LinkedIn](https://www.linkedin.com/in/cyril-leconte/) | [Kaggle](https://www.kaggle.com/cyrilleconte)
