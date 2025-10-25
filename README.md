@@ -22,11 +22,11 @@ Report Type	Script	Description
 
 Each generator produces:
 
-    .pptx PowerPoint reports (removed in default version)
-    
-    .pdf documents (removed in default version)
-    
-    .jpeg race cards suitable for sharing or media embedding
+* pptx PowerPoint reports (removed in default version)
+
+* pdf documents (removed in default version)
+
+* jpeg race cards suitable for sharing or media embedding
 
 ## 🚀 Getting Started
 
